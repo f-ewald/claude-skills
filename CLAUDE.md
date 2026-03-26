@@ -6,3 +6,4 @@
 - Avoid long methods; if a method exceeds 40 lines, consider refactoring it into smaller methods.
 - Avoid using global variables; instead, pass necessary data through method parameters or use class-level variables when appropriate.
 - Avoid big refactors unless specifically asked to do so. Focus on making minimal necessary changes to achieve the migration goals while maintaining code stability.
+- When refactoring, or adding making major changes, make sure to update the CLAUDE.md to reflect the new structure and rules.
