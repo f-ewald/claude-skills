@@ -11,4 +11,14 @@
 ```bash
 ln -s /path/to/claude-skills/skills/ ~/.claude/skills
 ln -s /path/to/claude-skills/CLAUDE.md ~/.claude/CLAUDE.md
+ln -s /path/to/claude-skills/statusline.sh ~/.claude/statusline.sh
+```
+
+Update your `~/.claude/settings.json` and add the following as a root level key:
+
+```
+"statusLine": {
+    "type": "command",
+    "command": "bash /home/fewald/.claude/statusline.sh"
+}
 ```
