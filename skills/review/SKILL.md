@@ -3,7 +3,7 @@ name: review
 description: Review a GitHub pull request for mistakes, classify them as major or minor, present a summary table, and post inline comments only on findings the user confirms one-by-one. Use when given a GitHub PR link to review.
 ---
 
-Review a GitHub pull request for mistakes. Never post anything to GitHub unless the user confirms a finding individually. Use the `gh` CLI (assume it is installed and authenticated; if a call fails on auth, tell the user to run `gh auth login`).
+Review a GitHub pull request for mistakes. Never post anything to GitHub unless the user confirms a finding individually. Use the `gh` CLI (assume it is installed and authenticated; if a call fails on auth, tell the user to run `gh auth login`). The tone of comments should be constructive, professional, and specific, aiming to help the author improve the code. Focus on correctness, security, and maintainability issues for major findings, and style or readability improvements for minor findings. Always provide a one-sentence description of each issue.
 
 ## 1. Input
 
