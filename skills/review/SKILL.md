@@ -19,10 +19,22 @@ Accept a GitHub PR URL of the form `https://github.com/{owner}/{repo}/pull/{numb
 
 Identify mistakes and classify each finding:
 
-- **Major** — bugs, correctness, security, data-loss issues, broken logic, or missing error handling.
-- **Minor (nitpick)** — style, naming, readability, or small idiomatic improvements.
+**Major** — correctness-affecting problems:
+- **Bugs** — wrong API used, off-by-one, incorrect arguments.
+- **Correctness** — the logic won't work as intended even though tests pass.
+- **Security** — unsafe/unvalidated parameters, injection, leaked secrets.
+- **Data loss** — state kept in memory only, transactions never committed.
+- **Broken logic** — the code claims to do one thing but does another.
+- **Missing error handling** — exceptions unhandled, or caught too broadly/narrowly.
 
-For each finding, record: file path, line number (the right side of the diff), severity, and a one-sentence description.
+**Minor (nitpick)** — quality improvements that don't affect correctness:
+- **Style** — formatting, inconsistent conventions.
+- **Naming** — unclear or misleading identifiers.
+- **Readability** — overly complex expressions, missing structure.
+- **Idiomatic** — small non-idiomatic constructs.
+- **Duplication** — repeated code that should be factored out (DRY).
+
+For each finding, record: file path, line number (the right side of the diff), severity, a one-sentence description, and — whenever the fix is a concrete code change — the replacement code to offer as a GitHub `suggestion` block.
 
 ## 4. Summary table
 
@@ -39,6 +51,18 @@ Walk through the findings in order. For each one, show the file:line, the severi
 
 ## 6. Post inline (only confirmed findings)
 
+Whenever the fix is a concrete code change, end the comment body with a GitHub `suggestion` block so the author can apply it with one click. The body has the form:
+
+````
+<one-sentence description of the issue>
+
+```suggestion
+<the exact replacement code>
+```
+````
+
+The `suggestion` block replaces the comment's target line(s) verbatim, so it must contain the complete intended replacement — correctly indented and with no diff markers. Skip the block for findings that have no single concrete replacement (e.g. "extract this into a helper").
+
 For each approved finding, post a standalone inline comment on the exact changed line:
 
 ```
@@ -50,8 +74,26 @@ gh api repos/{owner}/{repo}/pulls/{number}/comments \
   -f side="RIGHT"
 ```
 
+A suggestion must cover exactly the line(s) it replaces. For a multi-line replacement, target the whole range by also passing `-F start_line=<first line> -f start_side="RIGHT"` alongside `line=<last line>`.
+
 Confirm success (or report the error) after each post. Never post a finding the user skipped. Comment only on lines present in the diff so the API call targets a valid position. Keep comments specific and actionable.
 
-## 7. Wrap up
+## 7. Submit the review
 
-Summarize which comments were posted and which were skipped.
+Once all findings have been handled, ask the user whether they want to **approve the PR** or **just leave the comments**.
+
+- **Approve** — submit an approving review. In the body, give a short reasoning for approving: note that the remaining findings are minor and are recommendations or preferences rather than blockers.
+
+  ```
+  gh pr review {number} --repo {owner}/{repo} --approve --body "<reasoning>"
+  ```
+
+- **Comment only** — submit a non-approving review. In the body, give a short summary of how many issues were found (e.g. how many major and minor).
+
+  ```
+  gh pr review {number} --repo {owner}/{repo} --comment --body "<summary>"
+  ```
+
+## 8. Wrap up
+
+Summarize which comments were posted, which were skipped, and whether the PR was approved or left with comments.
