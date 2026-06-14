@@ -22,3 +22,8 @@ Update your `~/.claude/settings.json` and add the following as a root level key:
     "command": "bash /home/fewald/.claude/statusline.sh"
 }
 ```
+
+## Using these skills in GitHub Copilot
+
+These skills use the open Agent Skills (`SKILL.md`) standard, which GitHub Copilot also supports —
+see [docs/using-skills-in-copilot.md](docs/using-skills-in-copilot.md) for step-by-step instructions.
