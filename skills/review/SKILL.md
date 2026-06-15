@@ -1,9 +1,12 @@
 ---
 name: review
 description: Review a GitHub pull request for mistakes, classify them as major or minor, present a summary table, and post inline comments only on findings the user confirms one-by-one. Use when given a GitHub PR link to review.
+license: MIT
+compatibility: Requires the gh (GitHub CLI), installed and authenticated; run gh auth login if a call fails on auth.
+allowed-tools: Bash(gh:*)
 ---
 
-Review a GitHub pull request for mistakes. Never post anything to GitHub unless the user confirms a finding individually. Use the `gh` CLI (assume it is installed and authenticated; if a call fails on auth, tell the user to run `gh auth login`). The tone of comments should be constructive, professional, and specific, aiming to help the author improve the code. Focus on correctness, security, and maintainability issues for major findings, and style or readability improvements for minor findings. Always provide a one-sentence description of each issue.
+Review a GitHub pull request for mistakes. Never post anything to GitHub unless the user confirms a finding individually. The tone of comments should be constructive, professional, and specific, aiming to help the author improve the code. Focus on correctness, security, and maintainability issues for major findings, and style or readability improvements for minor findings. Always provide a one-sentence description of each issue.
 
 ## 1. Input
 
@@ -12,10 +15,20 @@ Accept a GitHub PR URL of the form `https://github.com/{owner}/{repo}/pull/{numb
 ## 2. Fetch the PR
 
 - Get the changed lines: `gh pr diff {number} --repo {owner}/{repo}`
-- Get the head commit SHA and metadata (the SHA is required to post comments): `gh pr view {number} --repo {owner}/{repo} --json headRefOid,title,files`
+- Get the head commit SHA, PR description, and metadata (the SHA is required to post comments; the description is needed for the accuracy check in the next step): `gh pr view {number} --repo {owner}/{repo} --json headRefOid,title,body,files`
 - When the diff alone is not enough to judge correctness, read surrounding file context (e.g. `gh api repos/{owner}/{repo}/contents/{path}?ref={headRefOid}` or fetch the file). Only flag issues on lines that are part of the diff.
 
-## 3. Review and classify
+## 3. Check description accuracy
+
+Compare the PR description/body against the actual diff and assess whether the stated summary is accurate. Look for:
+
+- **Omissions** — substantive changes in the diff the description doesn't mention.
+- **False claims** — things the description says it does that aren't in the diff.
+- **Misleading statements** — the description characterizes a change differently from what the code actually does.
+
+Report the assessment in chat: either confirm the description is accurate, or list the specific discrepancies. If the PR has no description, note that. Nothing is posted to GitHub in this step — remember the result for the review submission (Section 8).
+
+## 4. Review and classify
 
 Identify mistakes and classify each finding:
 
@@ -36,7 +49,7 @@ Identify mistakes and classify each finding:
 
 For each finding, record: file path, line number (the right side of the diff), severity, a one-sentence description, and — whenever the fix is a concrete code change — the replacement code to offer as a GitHub `suggestion` block.
 
-## 4. Summary table
+## 5. Summary table
 
 Present all findings in a markdown table. State explicitly that nothing has been posted to GitHub yet.
 
@@ -45,11 +58,11 @@ Present all findings in a markdown table. State explicitly that nothing has been
 | 1 | Major    | `src/a.py:42` | One-sentence description of the issue. |
 | 2 | Minor    | `src/b.js:10` | One-sentence description of the issue. |
 
-## 5. Confirm one-by-one
+## 6. Confirm one-by-one
 
 Walk through the findings in order. For each one, show the file:line, the severity, and the proposed comment body, then ask whether to post it. Accept: skip, edit-then-post, or post as-is. Do not batch — handle each finding individually.
 
-## 6. Post inline (only confirmed findings)
+## 7. Post inline (only confirmed findings)
 
 Whenever the fix is a concrete code change, end the comment body with a GitHub `suggestion` block so the author can apply it with one click. The body has the form:
 
@@ -78,9 +91,11 @@ A suggestion must cover exactly the line(s) it replaces. For a multi-line replac
 
 Confirm success (or report the error) after each post. Never post a finding the user skipped. Comment only on lines present in the diff so the API call targets a valid position. Keep comments specific and actionable.
 
-## 7. Submit the review
+## 8. Submit the review
 
 Once all findings have been handled, ask the user whether they want to **approve the PR** or **just leave the comments**.
+
+If the accuracy check (Section 3) found the PR description inaccurate, offer to append a brief note about the discrepancy to the review body — for either choice below. Only include the note if the user confirms.
 
 - **Approve** — submit an approving review. In the body, give a short reasoning for approving: note that the remaining findings are minor and are recommendations or preferences rather than blockers.
 
@@ -94,6 +109,6 @@ Once all findings have been handled, ask the user whether they want to **approve
   gh pr review {number} --repo {owner}/{repo} --comment --body "<summary>"
   ```
 
-## 8. Wrap up
+## 9. Wrap up
 
-Summarize which comments were posted, which were skipped, and whether the PR was approved or left with comments.
+Summarize which comments were posted, which were skipped, whether the PR description was flagged as inaccurate (and whether a note about it was added to the review), and whether the PR was approved or left with comments.
