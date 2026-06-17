@@ -1,6 +1,6 @@
 ---
 name: review
-description: Review a GitHub pull request for mistakes, classify them as major or minor, present a summary table, and post inline comments only on findings the user confirms one-by-one. Use when given a GitHub PR link to review.
+description: Review a GitHub pull request for mistakes, classify them as major or minor, present a summary table, and add inline comments to a single review only on findings the user confirms one-by-one. Use when given a GitHub PR link to review.
 license: MIT
 compatibility: Requires the gh (GitHub CLI), installed and authenticated; run gh auth login if a call fails on auth.
 allowed-tools: Bash(gh:*)
@@ -60,9 +60,16 @@ Present all findings in a markdown table. State explicitly that nothing has been
 
 ## 6. Confirm one-by-one
 
-Walk through the findings in order. For each one, show the file:line, the severity, and the proposed comment body, then ask whether to post it. Accept: skip, edit-then-post, or post as-is. Do not batch — handle each finding individually.
+Walk through the findings in order. For each one, show the file:line, the severity, and the proposed comment body, then ask whether to include it in the review. Accept: skip, edit-then-include, or include as-is. Confirm each finding individually — don't present them as a group. Collect the confirmed ones; they go into a single review assembled in the next step (nothing is sent to GitHub yet).
 
-## 7. Post inline (only confirmed findings)
+## 7. Assemble the review (only confirmed findings)
+
+Important: post nothing per finding. Gather every finding the user confirmed in Section 6 into a single review, then submit it in the next step. First check whether you already have a pending review on this PR — pending reviews are visible only to their author and GitHub allows at most one per user, so any `PENDING` entry is yours to reuse:
+
+```
+gh api repos/{owner}/{repo}/pulls/{number}/reviews \
+  --jq '[.[] | select(.state=="PENDING")][0] | {id, node_id}'
+```
 
 Whenever the fix is a concrete code change, end the comment body with a GitHub `suggestion` block so the author can apply it with one click. The body has the form:
 
@@ -76,39 +83,59 @@ Whenever the fix is a concrete code change, end the comment body with a GitHub `
 
 The `suggestion` block replaces the comment's target line(s) verbatim, so it must contain the complete intended replacement — correctly indented and with no diff markers. Skip the block for findings that have no single concrete replacement (e.g. "extract this into a helper").
 
-For each approved finding, post a standalone inline comment on the exact changed line:
+Build the review one of two ways, depending on the pending-review check above. In both, each comment's `body` is the text described above (its description plus the optional `suggestion` block):
+
+**No pending review exists — create one holding every confirmed comment in a single call.** Omit `event` so the review stays pending. The `comments` array can't be expressed with `-f`/`-F`, so pass JSON via `--input` (escape newlines in bodies as `\n`):
 
 ```
-gh api repos/{owner}/{repo}/pulls/{number}/comments \
-  -f body="<comment>" \
-  -f commit_id="<headRefOid>" \
-  -f path="<file path>" \
-  -F line=<line number> \
-  -f side="RIGHT"
+gh api repos/{owner}/{repo}/pulls/{number}/reviews --method POST --input - <<'JSON'
+{
+  "commit_id": "<headRefOid>",
+  "comments": [
+    {"path": "src/a.py", "line": 42, "side": "RIGHT", "body": "<description + optional suggestion block>"},
+    {"path": "src/b.js", "start_line": 8, "start_side": "RIGHT", "line": 10, "side": "RIGHT", "body": "<description>"}
+  ]
+}
+JSON
 ```
 
-A suggestion must cover exactly the line(s) it replaces. For a multi-line replacement, target the whole range by also passing `-F start_line=<first line> -f start_side="RIGHT"` alongside `line=<last line>`.
+Capture the returned review `id` — you submit it in Section 8. Use `line`+`side` for a single line; for a multi-line range add `start_line`+`start_side`.
 
-Confirm success (or report the error) after each post. Never post a finding the user skipped. Comment only on lines present in the diff so the API call targets a valid position. Keep comments specific and actionable.
+**A pending review already exists — reuse it.** Add each confirmed finding to that review via GraphQL, targeting its `node_id`:
+
+```
+gh api graphql -f query='
+  mutation($review: ID!, $path: String!, $line: Int!, $body: String!) {
+    addPullRequestReviewThread(input: {
+      pullRequestReviewId: $review, path: $path, line: $line, side: RIGHT, body: $body
+    }) { thread { id } }
+  }' -f review="<node_id>" -f path="<file path>" -F line=<line number> -f body="<comment>"
+```
+
+For a multi-line range, also declare `$startLine: Int!` and pass `startLine: $startLine, startSide: RIGHT` with `-F startLine=<first line>`. To avoid duplicating a finding already in a reused review, first list its comments (`gh api repos/{owner}/{repo}/pulls/{number}/reviews/{review_id}/comments`) and skip any match on path + line + body.
+
+Comment only on lines present in the diff so each comment targets a valid position. Never include a finding the user skipped. Keep comments specific and actionable.
 
 ## 8. Submit the review
 
-Once all findings have been handled, ask the user whether they want to **approve the PR** or **just leave the comments**.
+Once every confirmed finding is in the pending review (created or reused in Section 7), ask the user whether they want to **approve the PR** or **just leave the comments**. Submit that pending review by its `review_id` — the `id` captured in Section 7 — which publishes it together with all of its inline comments at once. Use this submit endpoint, not `gh pr review`, which would open a separate review without these comments.
 
-If the accuracy check (Section 3) found the PR description inaccurate, offer to append a brief note about the discrepancy to the review body — for either choice below. Only include the note if the user confirms.
+If the accuracy check (Section 3) found the PR description inaccurate, offer to fold a brief note about the discrepancy into the review body — for either choice below. Only include the note if the user confirms.
 
-- **Approve** — submit an approving review. In the body, give a short reasoning for approving: note that the remaining findings are minor and are recommendations or preferences rather than blockers.
-
-  ```
-  gh pr review {number} --repo {owner}/{repo} --approve --body "<reasoning>"
-  ```
-
-- **Comment only** — submit a non-approving review. In the body, give a short summary of how many issues were found (e.g. how many major and minor).
+- **Approve** — submit with `event=APPROVE`. In the body, give a short reasoning for approving: note that the remaining findings are minor and are recommendations or preferences rather than blockers.
 
   ```
-  gh pr review {number} --repo {owner}/{repo} --comment --body "<summary>"
+  gh api repos/{owner}/{repo}/pulls/{number}/reviews/{review_id}/events \
+    --method POST -f event=APPROVE -f body="<reasoning>"
+  ```
+
+- **Comment only** — submit with `event=COMMENT`. In the body, give a short summary of how many issues were found (e.g. how many major and minor).
+
+  ```
+  gh api repos/{owner}/{repo}/pulls/{number}/reviews/{review_id}/events \
+    --method POST -f event=COMMENT -f body="<summary>"
   ```
 
 ## 9. Wrap up
 
-Summarize which comments were posted, which were skipped, whether the PR description was flagged as inaccurate (and whether a note about it was added to the review), and whether the PR was approved or left with comments.
+Summarize which comments were included in the review, which were skipped, whether the PR description was flagged as inaccurate (and whether a note about it was added to the review), and whether the PR was approved or left with comments.
