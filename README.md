@@ -58,37 +58,28 @@ Notes:
 
 ## Directory-scoped `copilot` shell function
 
+> **Note:** This applies to **GitHub Copilot CLI only** — it resumes Copilot sessions and is unrelated to Claude Code's own session handling.
+
 Add this function to your shell startup file — `~/.zshrc` (zsh) or `~/.bashrc` (bash) — instead of a plain alias. It resumes the most recent Copilot session for the **current directory**, so each project keeps its own independent conversation history. Falls back to a fresh session when none exists yet.
 
-The function reads `sessions-index.json` — the internal registry Copilot maintains — so it only calls `--resume` with a known-valid session ID. This avoids the "No session matched" error that occurs when deriving the session ID from the `.jsonl` filenames directly (those files exist even for sessions that are no longer resumable).
+The function reads Copilot's session registry — the SQLite database at `~/.copilot/session-store.db` — and selects the most recently updated session whose `cwd` matches the current directory, so it only calls `--resume` with a known-valid session ID. This avoids the "No session matched" error that occurs when deriving the session ID from session files directly (those files exist even for sessions that are no longer resumable). It requires the `sqlite3` binary; if `sqlite3` isn't installed, the function says so and starts a new session instead.
 
 **zsh** — add to `~/.zshrc`:
 
 ```zsh
 # Resume the most recent Copilot session for the current directory.
-# Reads sessions-index.json (the internal registry Copilot maintains) so we
+# Reads Copilot's SQLite session registry (~/.copilot/session-store.db) so we
 # only call --resume with a known-valid session ID, avoiding spurious error output.
 copilot() {
-  local encoded_dir session_id sessions_index
-  encoded_dir=$(echo "$PWD" | tr '/' '-')
-  sessions_index="$HOME/.claude/projects/$encoded_dir/sessions-index.json"
+  local session_id db="$HOME/.copilot/session-store.db" cwd_q
+  # Escape single quotes so the path is a safe SQL string literal.
+  cwd_q=${PWD//\'/\'\'}
 
-  if [[ -f "$sessions_index" ]]; then
-    session_id=$(awk '
-      /^[[:space:]]*\{/ { id=""; mod=""; side=0 }
-      /"sessionId":/ {
-        s=$0; sub(/^[[:space:]]*"sessionId":[[:space:]]*"/, "", s); sub(/".*/, "", s); id=s
-      }
-      /"modified":/ {
-        s=$0; sub(/^[[:space:]]*"modified":[[:space:]]*"/, "", s); sub(/".*/, "", s); mod=s
-      }
-      /"isSidechain": true/ { side=1 }
-      /^[[:space:]]*\}/ {
-        if (id && !side && mod > best) { best=mod; best_id=id }
-        id=""; mod=""; side=0
-      }
-      END { if (best_id) print best_id }
-    ' "$sessions_index" 2>/dev/null)
+  if ! command -v sqlite3 >/dev/null 2>&1; then
+    echo "copilot: sqlite3 not found — cannot look up the previous session for this directory; starting a new session instead." >&2
+  elif [[ -f "$db" ]]; then
+    session_id=$(sqlite3 "$db" \
+      "SELECT id FROM sessions WHERE cwd='$cwd_q' ORDER BY updated_at DESC LIMIT 1;" 2>/dev/null)
   fi
 
   if [[ -n "$session_id" ]]; then
@@ -103,29 +94,18 @@ copilot() {
 
 ```bash
 # Resume the most recent Copilot session for the current directory.
-# Reads sessions-index.json (the internal registry Copilot maintains) so we
+# Reads Copilot's SQLite session registry (~/.copilot/session-store.db) so we
 # only call --resume with a known-valid session ID, avoiding spurious error output.
 copilot() {
-  local encoded_dir session_id sessions_index
-  encoded_dir=$(echo "$PWD" | tr '/' '-')
-  sessions_index="$HOME/.claude/projects/$encoded_dir/sessions-index.json"
+  local session_id db="$HOME/.copilot/session-store.db" cwd_q
+  # Escape single quotes so the path is a safe SQL string literal.
+  cwd_q=${PWD//\'/\'\'}
 
-  if [[ -f "$sessions_index" ]]; then
-    session_id=$(awk '
-      /^[[:space:]]*\{/ { id=""; mod=""; side=0 }
-      /"sessionId":/ {
-        s=$0; sub(/^[[:space:]]*"sessionId":[[:space:]]*"/, "", s); sub(/".*/, "", s); id=s
-      }
-      /"modified":/ {
-        s=$0; sub(/^[[:space:]]*"modified":[[:space:]]*"/, "", s); sub(/".*/, "", s); mod=s
-      }
-      /"isSidechain": true/ { side=1 }
-      /^[[:space:]]*\}/ {
-        if (id && !side && mod > best) { best=mod; best_id=id }
-        id=""; mod=""; side=0
-      }
-      END { if (best_id) print best_id }
-    ' "$sessions_index" 2>/dev/null)
+  if ! command -v sqlite3 >/dev/null 2>&1; then
+    echo "copilot: sqlite3 not found — cannot look up the previous session for this directory; starting a new session instead." >&2
+  elif [[ -f "$db" ]]; then
+    session_id=$(sqlite3 "$db" \
+      "SELECT id FROM sessions WHERE cwd='$cwd_q' ORDER BY updated_at DESC LIMIT 1;" 2>/dev/null)
   fi
 
   if [[ -n "$session_id" ]]; then
