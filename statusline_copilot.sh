@@ -6,9 +6,11 @@
 #   "statusLine": { "type": "command", "command": "<abs-path>/statusline_copilot.sh", "padding": 0 }
 #
 # Output format:
-#   [<model> (<window> context) · <effort>] <bar> <pct>% | <used>/<window> | ↑<sent> ↓<recv> | <aic> AIC · <quota>% left
+#   [<model> (<window> context) · <effort>] <bar> <pct>% | <used>/<window> | ↑<sent> ↓<recv> | <aic> AIC · <quota>% left | <session name>
 # e.g.
-#   [Opus 4.8 (1M context) · max] ████████░░░░░░░░░░░░ 41% | 406.3k/1m | ↑1.2m ↓45.6k | 536 AIC · 99.5% left
+#   [Opus 4.8 (1M context) · max] ████████░░░░░░░░░░░░ 41% | 406.3k/1m | ↑1.2m ↓45.6k | 536 AIC · 99.5% left | Review README.md for Copilot Alias
+#
+# The session-name segment is omitted when the session is unnamed (session_name null).
 #
 # The memory bar reflects current context-window usage and turns yellow at >=60%
 # and red at >=80%.
@@ -54,7 +56,8 @@ input=$(cat)
 # Window     : displayed_context_limit -> context_window_size -> 0
 # AIC        : ai_used.formatted (display) + ai_used.total_nano_aiu (fallback)
 # Sent/Recv  : session-cumulative total_input_tokens / total_output_tokens
-IFS=$'\x1f' read -r MODEL_RAW PCT USED WINDOW AIC_FMT NANO_AIU SENT RECV <<< "$(
+# Session    : session_name (rightmost segment; omitted when unnamed/null)
+IFS=$'\x1f' read -r MODEL_RAW PCT USED WINDOW AIC_FMT NANO_AIU SENT RECV SESSION_NAME <<< "$(
   printf '%s' "$input" | jq -r '
     [
       (.model.display_name // "unknown"),
@@ -68,7 +71,8 @@ IFS=$'\x1f' read -r MODEL_RAW PCT USED WINDOW AIC_FMT NANO_AIU SENT RECV <<< "$(
       (.ai_used.formatted // ""),
       (.ai_used.total_nano_aiu // 0),
       (.context_window.total_input_tokens // 0),
-      (.context_window.total_output_tokens // 0)
+      (.context_window.total_output_tokens // 0),
+      (.session_name // "")
     ] | map(tostring) | join("\u001f")' 2>/dev/null
 )"
 
@@ -77,6 +81,7 @@ MODEL_RAW="${MODEL_RAW:-unknown}"
 PCT="${PCT:-0}"; USED="${USED:-0}"; WINDOW="${WINDOW:-0}"
 AIC_FMT="${AIC_FMT:-}"; NANO_AIU="${NANO_AIU:-0}"
 SENT="${SENT:-0}"; RECV="${RECV:-0}"
+SESSION_NAME="${SESSION_NAME:-}"
 
 # Effort is NOT in the stdin feed; read the persisted setting.
 EFFORT="default"
@@ -195,4 +200,10 @@ else
   USAGE_SEG="${AIC} AIC"
 fi
 
-printf '%s %s %s | %s/%s | ↑%s ↓%s | %s\n' "$MODEL_SEG" "$BAR" "$PCT_DISP" "$USED_FMT" "$WINDOW_FMT" "$SENT_FMT" "$RECV_FMT" "$USAGE_SEG"
+# ---- Session name segment (rightmost; omitted when the session is unnamed) -----
+SESSION_SEG=""
+if [ -n "$SESSION_NAME" ]; then
+  SESSION_SEG=" | ${SESSION_NAME}"
+fi
+
+printf '%s %s %s | %s/%s | ↑%s ↓%s | %s%s\n' "$MODEL_SEG" "$BAR" "$PCT_DISP" "$USED_FMT" "$WINDOW_FMT" "$SENT_FMT" "$RECV_FMT" "$USAGE_SEG" "$SESSION_SEG"
