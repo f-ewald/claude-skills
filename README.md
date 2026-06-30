@@ -58,9 +58,11 @@ Notes:
 
 ## Directory-scoped `copilot` shell function
 
-Add this function to `~/.zshrc` instead of a plain alias. It resumes the most recent Copilot session for the **current directory**, so each project keeps its own independent conversation history. Falls back to a fresh session when none exists yet.
+Add this function to your shell startup file — `~/.zshrc` (zsh) or `~/.bashrc` (bash) — instead of a plain alias. It resumes the most recent Copilot session for the **current directory**, so each project keeps its own independent conversation history. Falls back to a fresh session when none exists yet.
 
 The function reads `sessions-index.json` — the internal registry Copilot maintains — so it only calls `--resume` with a known-valid session ID. This avoids the "No session matched" error that occurs when deriving the session ID from the `.jsonl` filenames directly (those files exist even for sessions that are no longer resumable).
+
+**zsh** — add to `~/.zshrc`:
 
 ```zsh
 # Resume the most recent Copilot session for the current directory.
@@ -97,7 +99,44 @@ copilot() {
 }
 ```
 
-After adding it, run `source ~/.zshrc`. Sessions persist until you run `/clear` inside Copilot.
+**bash (Linux)** — add to `~/.bashrc`:
+
+```bash
+# Resume the most recent Copilot session for the current directory.
+# Reads sessions-index.json (the internal registry Copilot maintains) so we
+# only call --resume with a known-valid session ID, avoiding spurious error output.
+copilot() {
+  local encoded_dir session_id sessions_index
+  encoded_dir=$(echo "$PWD" | tr '/' '-')
+  sessions_index="$HOME/.claude/projects/$encoded_dir/sessions-index.json"
+
+  if [[ -f "$sessions_index" ]]; then
+    session_id=$(awk '
+      /^[[:space:]]*\{/ { id=""; mod=""; side=0 }
+      /"sessionId":/ {
+        s=$0; sub(/^[[:space:]]*"sessionId":[[:space:]]*"/, "", s); sub(/".*/, "", s); id=s
+      }
+      /"modified":/ {
+        s=$0; sub(/^[[:space:]]*"modified":[[:space:]]*"/, "", s); sub(/".*/, "", s); mod=s
+      }
+      /"isSidechain": true/ { side=1 }
+      /^[[:space:]]*\}/ {
+        if (id && !side && mod > best) { best=mod; best_id=id }
+        id=""; mod=""; side=0
+      }
+      END { if (best_id) print best_id }
+    ' "$sessions_index" 2>/dev/null)
+  fi
+
+  if [[ -n "$session_id" ]]; then
+    command copilot --yolo --resume "$session_id"
+  else
+    command copilot --yolo
+  fi
+}
+```
+
+After adding it, reload your shell config — `source ~/.zshrc` (zsh) or `source ~/.bashrc` (bash). Sessions persist until you run `/clear` inside Copilot.
 
 ## Using these skills in GitHub Copilot
 
