@@ -5,6 +5,17 @@ always-on rules in `CLAUDE.md` / `COPILOT.md`; where this file is more specific
 (e.g. formatting), it takes precedence over general JavaScript style guidance
 where they conflict.
 
+## Language
+
+- Prefer **TypeScript** for all new source code — author `.ts` / `.tsx` files and
+  compile to JavaScript, rather than writing plain `.js` by hand.
+- Enable `strict` mode in `tsconfig.json`, and avoid `any`; reach for `unknown`
+  and precise types instead.
+- Plain JavaScript is acceptable only for small config files or when a toolchain
+  requires it.
+- Every rule below (formatting, components, servers, visualization, testing)
+  applies equally to TypeScript.
+
 ## Formatting
 
 - **Line length:** hard limit of **120 characters**. Wrap longer lines.
@@ -20,7 +31,8 @@ Use **JSDoc** — the language-specific documentation style for JavaScript.
 - Every module, exported class, and exported function/method has a JSDoc block.
 - Open with a one-line summary, then optional detail, then `@param` / `@returns`
   / `@throws` tags as applicable.
-- Put types in the JSDoc tags so callers and tooling can see them.
+- Put types in the JSDoc tags for plain JavaScript. In TypeScript, types live in
+  the signature, so omit `@param` / `@returns` types and document behavior only.
 
 ```javascript
 /**
