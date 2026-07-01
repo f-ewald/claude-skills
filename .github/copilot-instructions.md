@@ -38,7 +38,10 @@ There is no package manager, build step, or test suite (no `package.json`,
   script explicitly leaves the Claude one untouched.
 - `CLAUDE.md` is the global coding-rules artifact this repo **distributes**
   (symlinked to `~/.claude/CLAUDE.md`), not repo-local config. Keep it under
-  200 lines.
+  200 lines. `COPILOT.md` is its GitHub Copilot counterpart (symlinked to
+  `~/.copilot/copilot-instructions.md`) — the same global rules, kept in sync,
+  and likewise not repo-local config. Neither is *this* file
+  (`.github/copilot-instructions.md`), which is the repo-specific guidance.
 - `flask-to-quart-migration.md` is a sample output of the `design-doc` skill, not
   project source.
 

@@ -108,6 +108,11 @@ instructions (controlled by the `chat.useClaudeMdFile` setting). So this repo's 
 apply in Copilot as well — place or symlink a `CLAUDE.md` at your workspace root, or rely on the
 global `~/.claude/CLAUDE.md`.
 
+For the **Copilot CLI**, the global rules travel through Copilot's own personal-instructions file:
+symlink this repo's [`COPILOT.md`](../COPILOT.md) to `~/.copilot/copilot-instructions.md` (see the
+main [README](../README.md#github-copilot-global-rules)). The CLI also reads a `CLAUDE.md` directly,
+so inside this repo the rules already apply via the distributed `~/.claude/CLAUDE.md`.
+
 ---
 
 ## References

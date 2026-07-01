@@ -118,6 +118,18 @@ copilot() {
 
 After adding it, reload your shell config — `source ~/.zshrc` (zsh) or `source ~/.bashrc` (bash). Sessions persist until you run `/clear` inside Copilot.
 
+## GitHub Copilot global rules
+
+[`COPILOT.md`](COPILOT.md) is the GitHub Copilot CLI counterpart to [`CLAUDE.md`](CLAUDE.md): the same always-on global coding rules (code style + destructive-command safety), for the Copilot harness. Distribute it the same way you symlink `CLAUDE.md`, but into Copilot's personal-instructions location:
+
+```bash
+ln -s /path/to/claude-skills/COPILOT.md ~/.copilot/copilot-instructions.md
+```
+
+Copilot CLI reads `~/.copilot/copilot-instructions.md` as personal (global) custom instructions, so these rules then apply in every Copilot session. Keep `COPILOT.md` in sync with `CLAUDE.md`.
+
+> Not to be confused with [`.github/copilot-instructions.md`](.github/copilot-instructions.md), which documents *this repo's* architecture and is auto-loaded only when working inside this repo.
+
 ## Using these skills in GitHub Copilot
 
 These skills use the open Agent Skills (`SKILL.md`) standard, which GitHub Copilot also supports —
