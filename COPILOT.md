@@ -44,3 +44,5 @@ Copilot reads personal (global) instructions from (see README.md):
 ## Git commits
 - Do not add a `Co-authored-by` trailer to git commits, and do not otherwise list
   the AI assistant as an author or co-author.
+- Never create pull requests unless the user explicitly asks you to. Committing when
+  requested is fine, but do not open, push, or draft a PR on your own initiative.
