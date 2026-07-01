@@ -10,7 +10,10 @@
 # e.g.
 #   [Opus 4.8 (1M context) · max] ████████░░░░░░░░░░░░ 41% | 406.3k/1m | ↑1.2m ↓45.6k | 536 AIC · 99.5% left | Review README.md for Copilot Alias
 #
-# The session-name segment is omitted when the session is unnamed (session_name null).
+# The session-name segment is the only variable-length part: it is truncated with a
+# trailing ellipsis so the whole line always fits the terminal width (it never
+# wraps), and is omitted entirely when the session is unnamed or no space remains.
+# SL_COLUMNS overrides the detected terminal width (useful for testing).
 #
 # The memory bar reflects current context-window usage and turns yellow at >=60%
 # and red at >=80%.
@@ -204,10 +207,59 @@ else
   USAGE_SEG="${AIC} AIC"
 fi
 
-# ---- Session name segment (rightmost; omitted when the session is unnamed) -----
+# ---- Session name segment (rightmost; truncated so the line never wraps) -------
+# The session name is the only unbounded, variable-length segment. When the full
+# line would exceed the terminal width we shorten just the name (with a trailing
+# ellipsis) to the space that remains; every other segment is preserved. The
+# segment is omitted when the session is unnamed or no room is left for it.
+
+# Locale used for character-accurate truncation (width measurement is locale-independent).
+UTF8_LOCALE="${SL_UTF8_LOCALE:-en_US.UTF-8}"
+
+# Visible width of a string in terminal columns: drop ANSI SGR escapes, then count
+# UTF-8 code points (locale-independent — strip continuation bytes, count the rest).
+# Every glyph this script emits is single-width, so code points == columns.
+visible_width() {
+  printf '%s' "$1" \
+    | awk -v esc=$'\033' '{ gsub(esc "\\[[0-9;]*m", ""); printf "%s", $0 }' \
+    | LC_ALL=C tr -d '\200-\277' \
+    | LC_ALL=C wc -c | tr -d ' '
+}
+
+# Keep at most N characters of a string (UTF-8 aware where awk/locale allows).
+truncate_chars() {
+  LC_ALL="$UTF8_LOCALE" awk -v n="$2" '{ printf "%s", substr($0, 1, n) }' <<<"$1"
+}
+
+# Best-effort terminal width: SL_COLUMNS override, then the controlling terminal,
+# then COLUMNS/tput, then a conservative default. Errors are suppressed so a
+# missing /dev/tty never leaks onto the status line.
+detect_cols() {
+  local c="${SL_COLUMNS:-}"
+  [ -z "$c" ] && c=$(stty size 2>/dev/null </dev/tty | awk '{print $2}')
+  [ -z "$c" ] && c="${COLUMNS:-}"
+  [ -z "$c" ] && c=$(tput cols 2>/dev/null)
+  case "$c" in ''|*[!0-9]*) c=80 ;; esac
+  printf '%s' "$c"
+}
+
 SESSION_SEG=""
 if [ -n "$SESSION_NAME" ]; then
-  SESSION_SEG=" | ${SESSION_NAME}"
+  # Measure the fixed part of the line (everything left of the name) so we know how
+  # many columns remain for the name itself.
+  PREFIX=$(printf '%s %s %s | %s/%s | ↑%s ↓%s | %s' \
+    "$MODEL_SEG" "$BAR" "$PCT_DISP" "$USED_FMT" "$WINDOW_FMT" "$SENT_FMT" "$RECV_FMT" "$USAGE_SEG")
+  # 3 columns for the " | " separator, 1 spare so we never sit exactly at the edge.
+  AVAIL=$(( $(detect_cols) - $(visible_width "$PREFIX") - 3 - 1 ))
+
+  if [ "$AVAIL" -ge 2 ]; then
+    if [ "$(visible_width "$SESSION_NAME")" -le "$AVAIL" ]; then
+      SESSION_SEG=" | ${SESSION_NAME}"
+    else
+      # Reserve one column for the ellipsis.
+      SESSION_SEG=" | $(truncate_chars "$SESSION_NAME" $(( AVAIL - 1 )))…"
+    fi
+  fi
 fi
 
 printf '%s %s %s | %s/%s | ↑%s ↓%s | %s%s\n' "$MODEL_SEG" "$BAR" "$PCT_DISP" "$USED_FMT" "$WINDOW_FMT" "$SENT_FMT" "$RECV_FMT" "$USAGE_SEG" "$SESSION_SEG"
