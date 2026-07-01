@@ -110,6 +110,22 @@ Use **Vitest** as the test framework and runner (it integrates with Vite).
 - For web components, render into a fixture element and assert against the
   component's shadow DOM.
 
+## Dependencies
+
+Avoid dependency hell: keep the dependency tree small and deliberate.
+
+- Before adding a dependency, weigh it against the cost of its transitive tree,
+  supply-chain risk, and long-term maintenance. Prefer the platform (modern
+  JS/TS, Web APIs, Node built-ins) over a package.
+- If a dependency is small or trivial — a few lines, e.g. `left-pad`-style
+  helpers, simple formatters, tiny utilities — do **not** add it. Re-implement the
+  functionality yourself and cover it with a test.
+- Reserve dependencies for substantial, well-maintained libraries where
+  re-implementing would be error-prone or costly (e.g. the ones in the table
+  below: Vite, Express, Lit, D3, Vitest).
+- Keep re-implemented helpers in a shared, documented, tested `utils/` module
+  rather than copy-pasting them across the codebase.
+
 ## Libraries & tooling
 
 | Concern | Use |
