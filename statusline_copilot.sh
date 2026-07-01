@@ -139,18 +139,22 @@ WINDOW_LABEL=$(awk -v w="$WINDOW" 'BEGIN{
 }')
 
 # ---- AI compute used (AIC = total_nano_aiu / 1e9; matches the footer value) ----
-# Prefer Copilot's pre-formatted value; otherwise replicate its formatter (nb()).
-if [ -n "$AIC_FMT" ]; then
-  AIC="$AIC_FMT"
-else
-  AIC=$(awk -v n="$NANO_AIU" 'BEGIN{
-    a = n / 1e9
-    if (a == 0)        { print "0" }
-    else if (a >= 100) { printf "%d", a + 0.5 }
-    else if (a >= 10)  { s = sprintf("%.1f", a); sub(/\.0$/, "", s); print s }
-    else if (a < 0.01) { print "<0.01" }
-    else               { s = sprintf("%.2f", a); sub(/0+$/, "", s); sub(/\.$/, "", s); print s }
-  }')
+# Compute from the raw nano value so large counts are abbreviated with a k/m
+# suffix like the token segments (e.g. 19321 -> 19.3k). Copilot's own formatted
+# value is left unabbreviated, so it is only a fallback for when the nano value is
+# unavailable. Sub-1000 values keep Copilot's formatter (nb()) style.
+AIC=$(awk -v n="$NANO_AIU" 'BEGIN{
+  a = n / 1e9
+  if (a <= 0)            { print "" }
+  else if (a >= 1000000) { printf "%.1fm", a / 1000000 }
+  else if (a >= 1000)    { printf "%.1fk", a / 1000 }
+  else if (a >= 100)     { printf "%d", a + 0.5 }
+  else if (a >= 10)      { s = sprintf("%.1f", a); sub(/\.0$/, "", s); print s }
+  else if (a < 0.01)     { print "<0.01" }
+  else                   { s = sprintf("%.2f", a); sub(/0+$/, "", s); sub(/\.$/, "", s); print s }
+}')
+if [ -z "$AIC" ]; then
+  AIC="${AIC_FMT:-0}"
 fi
 
 # ---- Monthly premium-interaction quota (% remaining) --------------------------
