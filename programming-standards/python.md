@@ -51,8 +51,18 @@ Use **pytest** as the test framework and runner.
   cover multiple cases without duplication.
 - Keep tests isolated and independent of execution order.
 
+## Tooling
+
+- **Linting & formatting:** prefer **Ruff**. But if a project already has a
+  different linter/formatter configured (e.g. flake8, pylint, black, isort), leave
+  it in place — do not swap it out or layer Ruff on top.
+- **Package management:** prefer **uv** for dependency resolution, virtual
+  environments, and installing/running packages.
+
 ## Libraries & tooling
 
 | Concern | Use |
 | --- | --- |
 | Testing | pytest |
+| Linting & formatting | Ruff (unless another is already set up) |
+| Package management | uv |
