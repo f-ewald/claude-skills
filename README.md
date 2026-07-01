@@ -16,6 +16,8 @@ ln -s /path/to/claude-skills/programming-standards/ ~/.claude/programming-standa
 ln -s /path/to/claude-skills/statusline.sh ~/.claude/statusline.sh
 ```
 
+> **Company-managed rules:** If `~/.claude/CLAUDE.md` is already provided and managed by your company, don't overwrite it. Symlink this repo's rules under an alternate name instead (e.g. `ln -s /path/to/claude-skills/CLAUDE.md ~/.claude/CLAUDE.personal.md`) so the company file stays intact, and reference the personal file from the company-managed `CLAUDE.md` (e.g. with an `@CLAUDE.personal.md` import) if you want both to apply.
+
 Update your `~/.claude/settings.json` and add the following as a root level key:
 
 ```
@@ -130,6 +132,8 @@ ln -s /path/to/claude-skills/programming-standards/ ~/.copilot/programming-stand
 ```
 
 Copilot CLI reads `~/.copilot/copilot-instructions.md` as personal (global) custom instructions, so these rules then apply in every Copilot session. Keep `COPILOT.md` in sync with `CLAUDE.md`.
+
+> **Company-managed rules:** If `~/.copilot/copilot-instructions.md` is already provided and managed by your company, don't overwrite it. Symlink this repo's rules under an alternate name instead (e.g. `ln -s /path/to/claude-skills/COPILOT.md ~/.copilot/copilot-instructions.personal.md`) so the company file stays intact, and reference the personal file from the company-managed instructions if you want both to apply.
 
 > Not to be confused with [`.github/copilot-instructions.md`](.github/copilot-instructions.md), which documents *this repo's* architecture and is auto-loaded only when working inside this repo.
 
