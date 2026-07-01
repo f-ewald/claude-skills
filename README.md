@@ -2,6 +2,7 @@
 
 * `skills/` contains the actual skills, organized by category.
 * `CLAUDE.md` contains the global rules that apply to all Claude sessions.
+* `programming-standards/` contains per-language coding standards and required libraries (e.g. `python.md`).
 
 
 ## How to use
@@ -11,6 +12,7 @@
 ```bash
 ln -s /path/to/claude-skills/skills/ ~/.claude/skills
 ln -s /path/to/claude-skills/CLAUDE.md ~/.claude/CLAUDE.md
+ln -s /path/to/claude-skills/programming-standards/ ~/.claude/programming-standards
 ln -s /path/to/claude-skills/statusline.sh ~/.claude/statusline.sh
 ```
 
@@ -124,6 +126,7 @@ After adding it, reload your shell config — `source ~/.zshrc` (zsh) or `source
 
 ```bash
 ln -s /path/to/claude-skills/COPILOT.md ~/.copilot/copilot-instructions.md
+ln -s /path/to/claude-skills/programming-standards/ ~/.copilot/programming-standards
 ```
 
 Copilot CLI reads `~/.copilot/copilot-instructions.md` as personal (global) custom instructions, so these rules then apply in every Copilot session. Keep `COPILOT.md` in sync with `CLAUDE.md`.
