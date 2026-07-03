@@ -13,7 +13,7 @@ always-on rules in `CLAUDE.md` / `COPILOT.md`; where this file is more specific
 
 ## Documentation
 
-Use **Google-style docstrings** — this is LinkedIn's Python convention.
+Use **Google-style docstrings** as the documentation convention.
 
 - Every module, public class, and public function/method has a docstring.
 - Open with a one-line summary, then optional detail, then the
