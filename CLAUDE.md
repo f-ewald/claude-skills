@@ -25,3 +25,7 @@
   `ls`/print the targets to review them before deleting.
 - Be extra careful in shared or stateful directories (`~/.copilot`, `~/.claude`,
   home config) — deleting there can corrupt a live session or another process's state.
+
+## File Management
+- A `todo.md` file may be maintained that contains todos. Offer to work on them one by one and mark them as done.
+- A `bugs.md` file may be maintained. Whenever the user asks to fix bugs, offer to look them up and mark them as done once done.
