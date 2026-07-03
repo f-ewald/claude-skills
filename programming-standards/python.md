@@ -40,6 +40,26 @@ def compute_score(events: list[Event], weight: float = 1.0) -> float:
   return sum(e.value for e in events) * weight
 ```
 
+## Type hints
+
+Prefer modern built-in generic and union syntax over the legacy `typing`
+equivalents **when the project's minimum supported Python version allows it**:
+
+- **Unions:** write `X | None` instead of `Optional[X]`, and `X | Y` instead of
+  `Union[X, Y]`. The `|` operator works at runtime on **Python 3.10+** (PEP 604).
+- **Built-in generics:** write `list[int]`, `dict[str, int]`, `tuple[str, ...]`
+  instead of `typing.List` / `Dict` / `Tuple` (PEP 585, **Python 3.9+**).
+
+If the project must still support older versions, add `from __future__ import
+annotations` at the top of the module — annotations become lazy strings, so
+`X | None` and `list[int]` are accepted in **annotation positions** back to
+Python 3.7. Prefer that over reintroducing `typing`.
+
+Keep `Optional` / `Union` (and `List` / `Dict`) only where the type is evaluated
+at **runtime** and the `|` syntax genuinely isn't available — e.g. `isinstance()`,
+`cast(...)`, a `TypeVar` bound, or a `< 3.10` target where the `__future__` import
+can't be used. Don't mix the two styles within a file.
+
 ## Testing
 
 Use **pytest** as the test framework and runner.
