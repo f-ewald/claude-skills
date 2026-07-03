@@ -25,7 +25,8 @@ There is no package manager, build step, or test suite (no `package.json`,
   instructions, not code**: numbered phases/steps describing how the agent should
   behave (interview the user, present a summary table first, confirm findings
   one-by-one, post nothing until confirmed). Current skills: `design-doc`,
-  `grill-me`, `review`.
+  `grill-me`, `review`, and `ultracode` (which additionally ships a zero-dependency
+  Node orchestration engine, `orchestrate.mjs`, alongside its `SKILL.md`).
 - **Cross-harness by design** — the same `SKILL.md` standard and discovery paths
   work in both Claude Code (`~/.claude/skills`) and Copilot (`~/.copilot/skills`,
   `.github/skills`). `docs/using-skills-in-copilot.md` is the reference for the

@@ -141,3 +141,33 @@ Copilot CLI reads `~/.copilot/copilot-instructions.md` as personal (global) cust
 
 These skills use the open Agent Skills (`SKILL.md`) standard, which GitHub Copilot also supports —
 see [docs/using-skills-in-copilot.md](docs/using-skills-in-copilot.md) for step-by-step instructions.
+
+## Ultracode — multi-agent orchestration skill
+
+[`skills/ultracode/`](skills/ultracode/) is a heavier skill that puts the agent into a standing
+**multi-agent orchestration** mode for a task: rather than working solo, it fans each step out to
+parallel subagents, adversarially verifies every finding, then synthesizes
+(`find → verify → synthesize`). It is **cross-harness** — on Claude Code it drives the native
+`Workflow` tool; on the **GitHub Copilot CLI** it ships its own zero-dependency Node engine
+([`orchestrate.mjs`](skills/ultracode/orchestrate.mjs)) that reproduces the same deterministic
+fan-out by shelling out to real `copilot -p` subagents.
+
+**Invoke it** by asking to *"use ultracode"* (or `/ultracode`) at the start of a task — that is the
+standing opt-in to orchestration for the rest of that task.
+
+**On the Copilot CLI (deterministic engine):**
+
+```bash
+cd /path/to/claude-skills/skills/ultracode
+cp workflow.template.mjs my-review.mjs         # edit the CONFIG block + prompts for your task
+ULTRACODE_CLI=copilot node my-review.mjs path/to/file
+```
+
+Subagents are **read-only by default** (a view/search allowlist — no file writes or arbitrary
+shell); opt into full autonomy with `ULTRACODE_PERMS=all` only when a workflow must edit files or
+run commands. See [`skills/ultracode/README.txt`](skills/ultracode/README.txt) for the full Copilot
+guide (install, Options A/B, env vars, troubleshooting) and
+[`skills/ultracode/SKILL.md`](skills/ultracode/SKILL.md) for the behavioral contract.
+
+> Verified end-to-end on the Copilot CLI — the engine drives real `copilot -p` subagents through
+> the find → adversarially-verify → synthesize pipeline.
