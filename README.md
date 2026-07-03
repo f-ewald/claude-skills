@@ -142,6 +142,18 @@ Copilot CLI reads `~/.copilot/copilot-instructions.md` as personal (global) cust
 These skills use the open Agent Skills (`SKILL.md`) standard, which GitHub Copilot also supports —
 see [docs/using-skills-in-copilot.md](docs/using-skills-in-copilot.md) for step-by-step instructions.
 
+## Adversarial review — critique your own changes
+
+[`skills/adversarial-review/`](skills/adversarial-review/) turns the agent into a hostile reviewer of
+**your own** work: it auto-detects your changes (uncommitted, else the current branch vs its base),
+hunts for real flaws and action items, and presents them as a summary table — **changing nothing on
+disk**. It then offers to build a fix **todo list** you curate one-by-one (**accept as-is / reject /
+rephrase**), and only after you approve the plan does it implement the fixes, one at a time.
+
+**Invoke it** by asking for an *"adversarial review"* of your changes (or *"critically review what I
+just wrote"*). See [`skills/adversarial-review/SKILL.md`](skills/adversarial-review/SKILL.md) for the
+full phase-by-phase contract.
+
 ## Ultracode — multi-agent orchestration skill
 
 [`skills/ultracode/`](skills/ultracode/) is a heavier skill that puts the agent into a standing
