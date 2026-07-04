@@ -11,6 +11,17 @@ always-on rules in `CLAUDE.md` / `COPILOT.md`; where this file is more specific
   4-space indentation (this intentionally overrides PEP 8's 4-space rule).
 - One statement per line; align continuation lines for readability.
 
+## Imports
+
+- Put **all imports at the top of the file** — never inside functions, methods, or
+  conditionals. The only lines above them are the module docstring and any
+  `from __future__` imports.
+- Group them in the standard order — standard library, third-party, then local —
+  separated by a blank line. Ruff's import sorting enforces this.
+- Avoid deferred/inline imports; use one only to break a genuine circular import
+  or to guard a truly optional or heavy dependency, and add a short comment saying
+  why.
+
 ## Documentation
 
 Use **Google-style docstrings** as the documentation convention.
