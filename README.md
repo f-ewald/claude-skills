@@ -154,6 +154,20 @@ rephrase**), and only after you approve the plan does it implement the fixes, on
 just wrote"*). See [`skills/adversarial-review/SKILL.md`](skills/adversarial-review/SKILL.md) for the
 full phase-by-phase contract.
 
+## Session lessons — turn corrections into rules
+
+[`skills/session-lessons/`](skills/session-lessons/) gives a stateless assistant a memory: it reads a
+Copilot CLI session, finds the **mistakes** the model made — where it corrected itself, or where you
+had to correct it (including turns you interrupted) — and distills each into a short, durable rule. It
+presents the candidates as a summary table **without writing anything**, walks them **one-by-one**
+(**accept / reject / rephrase**), and only then appends each confirmed rule — to your global
+[`COPILOT.md`](COPILOT.md) or a repo-local `.github/copilot-instructions.md`, as you choose per rule —
+so the same correction doesn't recur next session.
+
+**Invoke it** by asking to *"learn from this session"*, *"what mistakes did you make?"*, or to *"add
+what you got wrong to COPILOT.md"*. It reads only local session data and makes no network calls. See
+[`skills/session-lessons/SKILL.md`](skills/session-lessons/SKILL.md) for the full phase-by-phase contract.
+
 ## Ultracode — multi-agent orchestration skill
 
 [`skills/ultracode/`](skills/ultracode/) is a heavier skill that puts the agent into a standing
