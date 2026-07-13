@@ -7,8 +7,7 @@ always-on rules in `CLAUDE.md` / `COPILOT.md`; where this file is more specific
 ## Formatting
 
 - **Line length:** hard limit of **120 characters**. Wrap longer lines.
-- **Indentation:** always **2 spaces** per level. Never use tabs, and never use
-  4-space indentation (this intentionally overrides PEP 8's 4-space rule).
+- **Indentation:** always **4 spaces** per level (matching PEP 8). Never use tabs.
 - One statement per line; align continuation lines for readability.
 
 ## Imports
@@ -34,21 +33,21 @@ Use **Google-style docstrings** as the documentation convention.
 
 ```python
 def compute_score(events: list[Event], weight: float = 1.0) -> float:
-  """Computes a weighted engagement score for a list of events.
+    """Computes a weighted engagement score for a list of events.
 
-  Args:
-    events: The events to score. Must be non-empty.
-    weight: Multiplier applied to the raw score.
+    Args:
+        events: The events to score. Must be non-empty.
+        weight: Multiplier applied to the raw score.
 
-  Returns:
-    The weighted engagement score.
+    Returns:
+        The weighted engagement score.
 
-  Raises:
-    ValueError: If ``events`` is empty.
-  """
-  if not events:
-    raise ValueError("events must be non-empty")
-  return sum(e.value for e in events) * weight
+    Raises:
+        ValueError: If ``events`` is empty.
+    """
+    if not events:
+        raise ValueError("events must be non-empty")
+    return sum(e.value for e in events) * weight
 ```
 
 ## Type hints

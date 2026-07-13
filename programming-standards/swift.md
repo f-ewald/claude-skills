@@ -16,9 +16,8 @@ conflict.
 
 ## Formatting
 
-- **Indentation:** **4 spaces** per level. This intentionally follows the Swift/Xcode
-  convention and is a deliberate exception to this repo's usual 2-space rule; never use
-  tabs.
+- **Indentation:** **4 spaces** per level, following the standard Swift/Xcode
+  convention; never use tabs.
 - **Line length:** hard limit of **120 characters**. Wrap longer lines.
 - Braces open on the **same line** (K&R / "One True Brace" style).
 - One primary type per file; the file name matches the type it defines.
