@@ -14,7 +14,7 @@ That means **no conversion is needed**. Because `README.md` already symlinks thi
 directory into `~/.claude/skills`, Copilot picks these skills up as-is. The only required
 frontmatter is `name` and `description`, which every skill here already has.
 
-Skills Copilot will see from this repo: `adversarial-review`, `design-doc`, `grill-me`, `review`, `session-lessons`, `ultracode`.
+Skills Copilot will see from this repo: `adversarial-review`, `deep-research`, `design-doc`, `grill-me`, `review`, `session-lessons`, `ultracode`, `worklog`.
 
 ---
 

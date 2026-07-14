@@ -197,3 +197,53 @@ guide (install, Options A/B, env vars, troubleshooting) and
 
 > Verified end-to-end on the Copilot CLI — the engine drives real `copilot -p` subagents through
 > the find → adversarially-verify → synthesize pipeline.
+
+## Deep research — autonomous multi-perspective research
+
+[`skills/deep-research/`](skills/deep-research/) fuses two of the skills above into an **autonomous
+researcher**. It decomposes a question into as wide a set of sub-questions as possible (the
+**grill-me** move) but — unlike grill-me — **auto-answers** each one the way a reasonable person
+would, logging every decision to an **"Assumptions made"** ledger instead of interrupting you. It
+then fans the investigation out to parallel subagents, one per perspective (technical, adoption,
+economics, risk, alternatives, counter-arguments…), **adversarially verifies** the load-bearing
+claims, and synthesizes a **cited markdown report**. The user is pulled in only at three
+checkpoints — **start**, **mid-research**, **end** — and only for genuinely blocking decisions, so
+the agents run long and autonomously.
+
+It **reuses the ultracode engine by reference** — its workflow template imports
+[`../ultracode/orchestrate.mjs`](skills/ultracode/orchestrate.mjs), so install both skills side by
+side. On Claude Code it uses the native `Workflow` tool; with no orchestration at all it degrades to
+sequential research. Sourcing is **company-agnostic**: internal MCP research tools are used only if
+connected, otherwise web-only.
+
+**On the Copilot CLI:**
+
+```bash
+cd /path/to/claude-skills/skills/deep-research
+cp research.workflow.template.mjs research.run.mjs      # edit TOPIC + ANGLES
+ULTRACODE_CLI=copilot node research.run.mjs "Your research question" > result.json
+```
+
+Research subagents are **read-only** — never set `ULTRACODE_PERMS=all` for a research run. The
+markdown report can optionally be converted to other formats by delegating (e.g. the
+`write-google-docs` skill, or `pandoc` for PDF/HTML). **Invoke it** by asking for *"deep research
+on …"* or an *"exhaustive multi-perspective investigation"*. See
+[`skills/deep-research/SKILL.md`](skills/deep-research/SKILL.md) for the full phase-by-phase
+contract and [`skills/deep-research/README.txt`](skills/deep-research/README.txt) for the Copilot
+CLI run guide.
+
+## Worklog — drive the `wl` CLI as a skill
+
+[`skills/worklog/`](skills/worklog/) is a **command-interface** skill that lets the agent operate a
+personal work log through the `wl` CLI — a stand-in for a
+worklog **MCP server** (MCP integrations are disallowed in some environments, so this skill is the
+workaround). It maps natural-language requests onto `wl` subcommands: `add` an entry, `show` a day or
+range, and inspect `projects`, `people`, `tags`, `stats`, `standup`, and `summary`. It also documents
+the safety rails — confirm before `remove`/`storage import`, never run the interactive `wl edit` or
+the blocking `wl server` inline — and how to strip `wl`'s Ruby-Logger `DEBUG` output noise
+(`| grep -Ev '^D, \['`) while keeping `INFO`/`WARN`/`ERROR` confirmations.
+
+**Requires** the `wl` binary on `$PATH` (`command -v wl`); all data stays local under `~/.worklog/`.
+**Invoke it** by asking to *"log that I …"*, *"what did I do yesterday?"*, *"show my standup"*, or
+*"list my worklog projects"*. See [`skills/worklog/SKILL.md`](skills/worklog/SKILL.md) for the full
+command reference and behavioral contract.

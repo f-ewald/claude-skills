@@ -44,12 +44,9 @@ Once the problem is clear, run a focused `AskUserQuestion` round to lock down th
 
 ## Phase 3 — Research alternatives & best practices
 
-Delegate the heavy lifting. Synthesize a research brief from Phases 1–2 covering: the problem statement, each candidate alternative, and the best-practice angle ("how do mature teams solve X"). Then run the research one of two ways:
+Delegate the heavy lifting to the **`deep-research`** skill. Synthesize a research brief from Phases 1–2 covering: the problem statement, each candidate alternative, and the best-practice angle ("how do mature teams solve X"), and instruct deep-research to treat **each alternative (plus best-practices) as a research angle**. It fans out one researcher per angle, adversarially verifies the load-bearing claims, and returns per-angle findings with cited sources — using whatever orchestration is available (the `Workflow` tool, the Copilot engine, or a sequential fallback).
 
-- **If multi-agent orchestration is available** (the `Workflow` tool, or an equivalent fan-out mechanism), run a fan-out research workflow: one researcher per candidate alternative plus a best-practices researcher, then an adversarial verification pass on the load-bearing claims, each returning cited sources.
-- **Otherwise**, invoke the **`deep-research`** skill with that brief.
-
-Either way the output must be the same: per-alternative evidence (pros, cons, adoption) plus verified key claims, all with source URLs.
+The output must be: per-alternative evidence (pros, cons, adoption) plus verified key claims, all with source URLs.
 
 Instruct the research to **also consult internal sources** when internal MCP tools are connected - list MCP tools first - to surface internal prior art and existing solutions before recommending an external one. If those tools are not connected, proceed **web-only** and do not block on them.
 
