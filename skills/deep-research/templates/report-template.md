@@ -24,7 +24,7 @@ tools if any, else web), the orchestration mechanism, and how claims were verifi
 - **Question:** {the research question}
 - **Perspectives covered:** {angle 1}, {angle 2}, …
 - **Sources:** {web / internal MCP tools / both}
-- **Verification:** load-bearing facts resolved from authoritative/primary sources and adversarially verified ({n} confirmed, {r} refuted, {u} unconfirmed)
+- **Verification:** load-bearing facts resolved from authoritative/primary sources and adversarially verified ({n} confirmed, {r} refuted, {u} unconfirmed); the synthesized conclusion was then red-teamed by a separate adversary (verdict: {survives | qualified | overturned})
 
 ## Key Findings
 
@@ -74,9 +74,22 @@ any they would answer differently. -->
 
 - {something still undecided or needing input / further research}
 
+## Adversarial Review (Red-Team)
+
+<!-- A separate adversary took the position that this report's own conclusion is FALSE and built the
+strongest good-faith case against it. Summarize that case and how it was resolved; the conclusion
+below must reflect this outcome. -->
+
+- **Strongest counter-thesis:** {the best opposing view}
+- **Weak points raised:** {specific points, each naming the finding/step it targets}
+- **Would flip the conclusion if wrong:** {the load-bearing claims the conclusion most depends on}
+- **Verdict:** {survives | holds only with caveats | overturned} — {why the counter-case does or doesn't succeed}
+- **Residual doubts:** {what remains genuinely uncertain}
+
 ## Recommendation / Conclusion
 
-<!-- The bottom-line answer and why, given the evidence above. -->
+<!-- The bottom-line answer and why, given the evidence above AND the red-team outcome. State whether
+the conclusion survived as-is, was qualified with caveats, or was revised. -->
 
 {The conclusion and the reasoning behind it.}
 

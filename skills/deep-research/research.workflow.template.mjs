@@ -6,8 +6,10 @@
  *
  * Shape: fan out one RESEARCHER per perspective/angle over a single TOPIC (each returns findings
  * WITH source URLs), then ADVERSARIALLY VERIFY every load-bearing claim (a skeptic prompted to
- * refute it), keeping only claims that survive. This is the deep-research analogue of ultracode's
- * review -> verify recipe.
+ * refute it), keeping only claims that survive. Finally a single RED-TEAM subagent takes the
+ * position that the conclusion those surviving findings support is FALSE and marshals the strongest
+ * case against it (emitted as `adversarialReview`). This is the deep-research analogue of
+ * ultracode's review -> verify recipe.
  *
  * Engine: this imports ultracode's orchestrate.mjs BY REFERENCE. It expects the `ultracode` skill
  * installed as a SIBLING under the same skills/ directory:
@@ -119,6 +121,30 @@ const VERDICT_SCHEMA = {
   required: ['status', 'reasoning'],
 }
 
+const REDTEAM_SCHEMA = {
+  type: 'object',
+  properties: {
+    inferredThesis: { type: 'string' },
+    counterThesis: { type: 'string' },
+    weakPoints: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          point: { type: 'string' },
+          targets: { type: 'string' },
+          whyItMatters: { type: 'string' },
+        },
+        required: ['point'],
+      },
+    },
+    flipsIfWrong: { type: 'array', items: { type: 'string' } },
+    verdict: { type: 'string', enum: ['survives', 'qualify', 'overturn'] },
+    residualDoubts: { type: 'string' },
+  },
+  required: ['counterThesis', 'verdict'],
+}
+
 const researchPrompt = (a) =>
   `Research this topic from the "${a.key}" perspective (${a.focus}):\n\n"${TOPIC}"\n\n` +
   `Investigate thoroughly using web search/fetch and any connected internal research tools. ` +
@@ -139,6 +165,25 @@ const verifyPrompt = (f) =>
   `'unconfirmed' — do NOT report an unconfirmed claim as refuted. For 'refuted'/'unconfirmed', put ` +
   `the exact scope you checked (sources, versions, conditions) in scope. Put the single strongest ` +
   `corroborating URL in bestSource (empty string if none).`
+
+// Red-team the WHOLE thesis (top-down), distinct from the per-claim skeptic above: assume the
+// conclusion the surviving findings support is false and argue the strongest case against it.
+const redTeamPrompt = (confirmed, refuted, unconfirmed) =>
+  `You are an adversarial RED-TEAM reviewing the ENTIRE body of research on:\n"${TOPIC}"\n\n` +
+  `Confirmed load-bearing findings:\n${confirmed.map((f, i) => `  ${i + 1}. ${f.claim}`).join('\n') || '  (none)'}\n\n` +
+  `Refuted claims:\n${refuted.map((f) => `  - ${f.claim}`).join('\n') || '  (none)'}\n\n` +
+  `Unconfirmed claims:\n${unconfirmed.map((f) => `  - ${f.claim}`).join('\n') || '  (none)'}\n\n` +
+  `First state, in inferredThesis, the conclusion these findings collectively support. Then ADOPT ` +
+  `THE POSITION THAT THIS THESIS IS FALSE and build the strongest good-faith case against it — ` +
+  `attack the REASONING, not just individual facts: selection/confirmation bias in the angles ` +
+  `covered, alternative explanations of the same evidence, over-generalization beyond the exact ` +
+  `scope each fact was checked in, over-reliance on any single load-bearing claim, and whether the ` +
+  `refuted/unconfirmed items undercut the whole. Return counterThesis (the strongest opposing ` +
+  `view), weakPoints (each naming what it targets), flipsIfWrong (the load-bearing claims that ` +
+  `would OVERTURN the conclusion if wrong), and verdict: 'survives' (conclusion holds), 'qualify' ` +
+  `(holds only with caveats), or 'overturn' (the evidence does not support it). Do NOT manufacture ` +
+  `doubt — if the conclusion is genuinely robust, return 'survives' and explain why the best ` +
+  `counter-case still fails. Put anything genuinely uncertain in residualDoubts.`
 
 // ─── ORCHESTRATION ──────────────────────────────────────────────────────────────────────
 run(async () => {
@@ -171,6 +216,18 @@ run(async () => {
   const unconfirmed = verified.filter((f) => f && statusOf(f) === 'unconfirmed')
   log(`load-bearing: ${confirmed.length} confirmed, ${refuted.length} refuted, ${unconfirmed.length} unconfirmed`)
 
+  phase(MODELS.length ? 'Adversarial red-team of the findings (strong tier, cross-family)' : 'Adversarial red-team of the findings')
+  const domFamily = (() => {
+    const counts = {}
+    for (const f of confirmed) if (f.researchFamily) counts[f.researchFamily] = (counts[f.researchFamily] || 0) + 1
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0]
+  })()
+  const rtModel = findings.length ? pickModel('strong', ANGLES.length, { avoidFamily: domFamily }) : undefined
+  const redTeam = findings.length
+    ? await agent(redTeamPrompt(confirmed, refuted, unconfirmed), { label: `red-team${rtModel ? ` @${rtModel.id}` : ''}`, model: rtModel && rtModel.id, schema: REDTEAM_SCHEMA })
+    : null
+  if (redTeam) log(`red-team verdict: ${redTeam.verdict || 'n/a'} (${(redTeam.weakPoints || []).length} weak points)`)
+
   const sources = [...new Set(findings.flatMap((f) => f.sources || []).filter(Boolean))]
 
   return {
@@ -182,6 +239,15 @@ run(async () => {
     confirmedClaims: confirmed.map((f) => ({ angle: f.angle, claim: f.claim, verifiedBy: f.verifyFamily, source: (f.verdict && f.verdict.bestSource) || (f.sources || [])[0] })),
     refutedClaims: refuted.map((f) => ({ angle: f.angle, claim: f.claim, why: f.verdict && f.verdict.reasoning, scope: f.verdict && f.verdict.scope })),
     unconfirmedClaims: unconfirmed.map((f) => ({ angle: f.angle, claim: f.claim, why: f.verdict && f.verdict.reasoning, scope: f.verdict && f.verdict.scope })),
+    adversarialReview: redTeam && {
+      inferredThesis: redTeam.inferredThesis,
+      counterThesis: redTeam.counterThesis,
+      weakPoints: redTeam.weakPoints || [],
+      flipsIfWrong: redTeam.flipsIfWrong || [],
+      verdict: redTeam.verdict,
+      residualDoubts: redTeam.residualDoubts,
+      reviewedBy: rtModel && rtModel.family,
+    },
     sources,
   }
 })

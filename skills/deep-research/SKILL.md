@@ -14,11 +14,14 @@ claims, then synthesize with citations. Run **autonomously**: instead of intervi
 answer your own questions the way a reasonable, well-informed person would and record every such
 decision, pulling the user in only at the checkpoints below.
 
-This skill combines two others:
+This skill combines three others:
 
 - **grill-me** — generate as many questions as possible (walk every branch of the research tree).
 - **ultracode** — fan the work out to parallel subagents and adversarially verify
   (`find → verify → synthesize`).
+- **adversarial-review** — red-team the *conclusion*: a separate adversary takes the position that
+  the synthesized findings are false and argues the strongest case against them, so the thesis (not
+  just each individual fact) is stress-tested.
 
 Work through the phases in order.
 
@@ -154,10 +157,12 @@ Pause **once**, batched, only if research surfaces a **material fork** that a re
 can't resolve, or a finding that invalidates the framing. Otherwise keep running autonomously. This
 is the "interactive phase" — use it sparingly.
 
-## Phase 6 — Synthesize the report
+## Phase 6 — Synthesize the report (draft)
 
-Dedup and merge findings in your own reasoning. Read
-[templates/report-template.md](templates/report-template.md) and fill every section:
+Dedup and merge findings in your own reasoning, and form the conclusion as a **draft** — Phase 7
+will red-team it before you finalize. Read
+[templates/report-template.md](templates/report-template.md) and fill every section (leave the
+**Adversarial Review** section for Phase 7):
 
 - **TL;DR / Abstract** (write last), **Scope & Method** (depth, sources, and orchestration used),
   **Key Findings** grouped by theme/perspective, **Evidence & Analysis**, **Verified vs. Unverified
@@ -165,11 +170,40 @@ Dedup and merge findings in your own reasoning. Read
   **Recommendation / Conclusion**, and a numbered, deduped **References** list. Every load-bearing
   claim cites a source by number.
 
-## Phase 7 — Emit + end checkpoint
+## Phase 7 — Adversarial red-team of the findings
+
+Stress-test the **conclusion itself**, not just its individual facts. This is distinct from Phase 4:
+there, a skeptic verifies each load-bearing *claim* bottom-up and a *counter-arguments angle* gathers
+criticisms of the topic; here a **separate subagent** attacks the **assembled thesis** top-down, its
+explicit job to **assume the report's own conclusion is false** and marshal the strongest good-faith
+case against it.
+
+- **Adopt the opposing position.** State the thesis the findings support, then argue it is wrong —
+  attacking the *reasoning*, not just facts: selection/confirmation bias in the angles chosen,
+  alternative explanations of the same evidence, over-generalization beyond the exact scope each fact
+  was checked in, over-reliance on any single load-bearing claim, and whether the refuted/unconfirmed
+  items undercut the whole.
+- **Return a structured rebuttal:** the strongest counter-thesis, specific weak points (each naming
+  what it targets), the load-bearing claims that would **overturn** the conclusion if wrong, and a
+  verdict — **survives** / **qualify** (holds only with caveats) / **overturn**. Do not manufacture
+  doubt: if the conclusion is robust, say **survives** and explain why the best counter-case fails.
+- **Feed it back into synthesis (reconcile).** The conclusion must *address* the rebuttal — keep it,
+  add the caveats, or revise/overturn it — and the steelmanned counter-case ships in the report's
+  **Adversarial Review** section so the reader sees the opposition and its resolution.
+- **Mechanism (per runtime).** The **Copilot-CLI + Node** engine already emits this as
+  `adversarialReview` (a strong, cross-family red-team subagent runs right after verification) — use
+  it directly. On the **Claude Code** Workflow, add a final red-team `agent()` stage over the
+  confirmed findings. With **no orchestration**, dispatch one dedicated red-team subagent yourself
+  before finalizing.
+- **Model (if a pool is available).** Use a **strong** model from a **different family** than did the
+  bulk of the research/verification, to catch family-specific blind spots.
+
+## Phase 8 — Emit + end checkpoint
 
 Derive a `kebab-case` slug from the title, propose `./<slug>.md`, confirm the filename, then write
-the markdown report. Present a short summary **plus the Assumptions list** so the user can spot any
-they'd answer differently. Then **offer** optional format conversions and **delegate** — build
+the markdown report. Present a short summary **plus the Assumptions list and the red-team verdict**
+(survives / qualified / overturned) so the user can spot any they'd answer differently. Then
+**offer** optional format conversions and **delegate** — build
 nothing new:
 
 - **Google Doc** → the `write-google-docs` skill (pass the assembled markdown).

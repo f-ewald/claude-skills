@@ -3,8 +3,9 @@
 ==============================================================================
 
 deep-research fans a single topic out to one researcher subagent per
-perspective, adversarially verifies the load-bearing claims, and synthesizes a
-cited markdown report. It REUSES the ultracode skill's engine rather than
+perspective, adversarially verifies the load-bearing claims, red-teams the
+conclusion those findings support (a separate adversary that argues it is
+false), and synthesizes a cited markdown report. It REUSES the ultracode skill's engine rather than
 shipping its own — see ../ultracode/README.txt for engine mechanics, env vars,
 permissions, and troubleshooting. This file only covers what is specific to
 deep-research. For the behavioral contract (phases, checkpoints, autonomy),
@@ -36,9 +37,9 @@ read SKILL.md.
     ULTRACODE_CLI=copilot node research.run.mjs "Your research question" > result.json
 
 Progress prints to STDERR; the final JSON — findings by angle, confirmed vs.
-unverified load-bearing claims, and a deduped source list — prints to STDOUT.
-Feed that JSON back into the deep-research Phase 6 synthesis step to write the
-markdown report.
+unverified load-bearing claims, an `adversarialReview` red-team of the overall
+conclusion, and a deduped source list — prints to STDOUT. Feed that JSON back
+into the deep-research Phase 6 synthesis step to write the markdown report.
 
 KEEP THE WORKFLOW FILE IN THIS DIRECTORY (next to the ../ultracode sibling).
 Node resolves the './../ultracode/orchestrate.mjs' import relative to the
