@@ -57,6 +57,26 @@ documented in ../ultracode/README.txt.
 
 
 ------------------------------------------------------------------------------
+ Heterogeneous models (optional — cheaper + more diverse)
+------------------------------------------------------------------------------
+To investigate angles with a MIX of models — different families for diverse
+perspectives, cheap models for easy angles and strong models for hard reasoning
+and verification — give the workflow a model pool. Either edit the MODELS array
+near the top of your research.run.mjs, or set the env var (no editing needed):
+
+    ULTRACODE_MODELS="familyA:cheap:modelA-mini, familyA:strong:modelA-pro, \
+                      familyB:cheap:modelB-mini, familyB:strong:modelB-pro" \
+    ULTRACODE_CLI=copilot node research.run.mjs "Your research question"
+
+Each entry is family:tier:model-id, where tier is 'cheap' or 'strong'.
+Researchers rotate across families; easy angles (ANGLES complexity:'easy') use
+cheap models, hard angles use strong ones; and every load-bearing claim is
+verified by a strong model from a DIFFERENT family than produced it. Leave the
+pool empty to use a single default model everywhere (ULTRACODE_MODEL or the CLI
+default) — this feature is strictly "if available."
+
+
+------------------------------------------------------------------------------
  Company-agnostic sourcing
 ------------------------------------------------------------------------------
 The researcher prompt asks each subagent to use web search/fetch AND any

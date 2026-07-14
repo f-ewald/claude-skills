@@ -224,6 +224,11 @@ cp research.workflow.template.mjs research.run.mjs      # edit TOPIC + ANGLES
 ULTRACODE_CLI=copilot node research.run.mjs "Your research question" > result.json
 ```
 
+For more diverse perspectives it can also spread researchers across a **heterogeneous model pool** —
+rotating model families and using cheap models for easy angles, stronger models for hard reasoning
+and verification — via the workflow's `MODELS` config or the `ULTRACODE_MODELS` env var (best-effort:
+it falls back to a single model when a pool isn't available).
+
 Research subagents are **read-only** — never set `ULTRACODE_PERMS=all` for a research run. The
 markdown report can optionally be converted to other formats by delegating (e.g. the
 `write-google-docs` skill, or `pandoc` for PDF/HTML). **Invoke it** by asking for *"deep research

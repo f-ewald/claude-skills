@@ -40,6 +40,16 @@ Work through the phases in order.
 - **Scale to the ask.** Pick a depth — `quick | standard | exhaustive` — that sets the number of
   researcher agents, verification voters, and loop rounds. Default `standard`; go `exhaustive` when
   the user says "thorough / deep / comprehensive."
+- **Heterogeneous models (if available).** To widen perspective and control cost, spread subagents
+  across a heterogeneous model pool whenever more than one model is available:
+  - **Rotate model families** across the research angles so different perspectives are investigated
+    by different families — and verify each load-bearing claim with a *different* family than
+    produced it, to catch family-specific blind spots.
+  - **Match cost to difficulty** — cheap/small models for easy, mechanical steps (broad lookups,
+    dedup, the completeness-critic enumeration); stronger/expensive models for hard reasoning
+    (adversarial verification, synthesis, counter-argument and risk analysis).
+  - **Best-effort, graceful fallback** — this is "if available." If you can determine only one
+    model, use it everywhere; never fail or block because a diverse pool isn't available.
 
 ## Phase 0 — Frame the research
 
@@ -50,6 +60,9 @@ markdown file). Then detect your environment:
   (ultracode's `orchestrate.mjs`)? just a `task` tool? none? (Determines Phase 4's path.)
 - **Sources** — list connected MCP tools; note whether internal research/code-search is available.
   If not, plan web-only.
+- **Models** — determine which models are available (the runtime's model list, a `/model`-style
+  command, or a user-provided list) and group them by **family** and **cost tier** (cheap vs.
+  strong). If you can find only one, note that and skip the model-heterogeneity below.
 
 Do not ask the user about any of this unless it is genuinely ambiguous — infer sensible defaults
 and record them.
@@ -111,6 +124,19 @@ across runtimes; only the mechanism differs (see the **ultracode** skill):
   angle in a single response, collect JSON, dedup, then a verify round; loop across turns until dry.
 - **No orchestration at all** — degrade gracefully: research each angle sequentially yourself, still
   covering every perspective and still verifying the load-bearing claims.
+
+**Assign models heterogeneously (if a pool is available).** Whichever mechanism you use, spread the
+work across model families and tiers per the *Heterogeneous models* principle above:
+
+- **Claude Code Workflow** — pass a distinct `model` to each `agent()` call: rotate families across
+  the per-angle researchers, use the cheap tier for easy angles and the strong tier for hard ones,
+  and pick a strong, different-family model for each verification agent.
+- **Copilot engine (Option A)** — the template ships this prewired: populate its `MODELS` pool (edit
+  the array or set `ULTRACODE_MODELS="family:tier:id, …"`) and it rotates families across
+  researchers, selects the tier from each angle's `complexity`, and verifies each claim with a
+  strong cross-family model. Empty pool → the single default model everywhere.
+- **Task-loop (Option B)** — if your `task` tool accepts a model override, set it per subagent the
+  same way (rotate families, match tier to difficulty); otherwise dispatch with what you have.
 
 ## Phase 5 — Mid-research checkpoint (only if needed)
 
