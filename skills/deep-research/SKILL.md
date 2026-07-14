@@ -35,6 +35,16 @@ Work through the phases in order.
   **web-only** and never block on internal tools.
 - **Citations required.** Every load-bearing claim carries a source. Claims that can't be
   sourced/verified are kept but flagged as unverified.
+- **Resolve, don't infer, load-bearing facts.** For a fact a conclusion hinges on (a version,
+  config value, flag state, price, date, spec detail), get it from the **authoritative/primary
+  source** and, where possible, **resolve it directly** at the exact target (the pinned
+  version/BOM/lockfile, the specific commit/tag, the actual config or environment) instead of
+  reasoning about what it "should" be — "unpinned" ≠ "latest." This especially guards the
+  auto-answer autonomy above: never let a reasonable-person *guess* stand in for a checkable fact.
+- **Absence of evidence ≠ evidence of absence.** A claim you could not confirm is *unconfirmed*,
+  not *false* — keep the two distinct. Any negative or null finding must carry the **scope you
+  actually checked** (which sources, versions, conditions); a clean result under conditions that
+  don't match the real ones is not a disproof. State that limitation explicitly.
 - **Safe by default.** Research subagents are **read-only** (view/search/web-fetch). Never grant
   write/exec permissions for a research fan-out.
 - **Scale to the ask.** Pick a depth — `quick | standard | exhaustive` — that sets the number of

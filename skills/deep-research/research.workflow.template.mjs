@@ -110,26 +110,34 @@ const RESEARCH_SCHEMA = {
 const VERDICT_SCHEMA = {
   type: 'object',
   properties: {
-    isReal: { type: 'boolean' },
+    status: { type: 'string', enum: ['confirmed', 'refuted', 'unconfirmed'] },
     confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
     reasoning: { type: 'string' },
+    scope: { type: 'string' },
     bestSource: { type: 'string' },
   },
-  required: ['isReal', 'reasoning'],
+  required: ['status', 'reasoning'],
 }
 
 const researchPrompt = (a) =>
   `Research this topic from the "${a.key}" perspective (${a.focus}):\n\n"${TOPIC}"\n\n` +
   `Investigate thoroughly using web search/fetch and any connected internal research tools. ` +
-  `Return concrete, defensible findings. For EACH finding include the claim, the supporting ` +
-  `evidence, and one or more SOURCE URLs — no source, no finding. Set loadBearing=true for claims ` +
-  `a conclusion would depend on. Do not pad or speculate; an empty findings array is fine.`
+  `Prefer PRIMARY/AUTHORITATIVE sources; for any fact a conclusion hinges on (a version, config ` +
+  `value, flag state, price, date, spec detail), resolve it directly from the source rather than ` +
+  `inferring what it "should" be. Return concrete, defensible findings. For EACH finding include ` +
+  `the claim, the supporting evidence, and one or more SOURCE URLs — no source, no finding. Set ` +
+  `loadBearing=true for claims a conclusion would depend on. Do not pad or speculate; an empty ` +
+  `findings array is fine.`
 
 const verifyPrompt = (f) =>
   `Adversarially verify this research claim about:\n"${TOPIC}"\n\n` +
   `Claim: ${f.claim}\nEvidence offered: ${f.evidence}\nSources: ${(f.sources || []).join(', ') || '(none)'}\n\n` +
-  `Independently check the sources and search for refutation. Your job is to REFUTE it. Default ` +
-  `isReal=false unless independent sources unambiguously confirm the claim. Put the single strongest ` +
+  `Check the AUTHORITATIVE/PRIMARY source directly — resolve the fact at its exact target (pinned ` +
+  `version/BOM/lockfile, specific commit/tag, actual config or environment); do not infer what it ` +
+  `"should" be. Your job is to REFUTE the claim. Return status='confirmed' ONLY if the primary ` +
+  `source unambiguously confirms it, 'refuted' if the source contradicts it, otherwise ` +
+  `'unconfirmed' — do NOT report an unconfirmed claim as refuted. For 'refuted'/'unconfirmed', put ` +
+  `the exact scope you checked (sources, versions, conditions) in scope. Put the single strongest ` +
   `corroborating URL in bestSource (empty string if none).`
 
 // ─── ORCHESTRATION ──────────────────────────────────────────────────────────────────────
@@ -157,9 +165,11 @@ run(async () => {
     }),
   )
 
-  const confirmed = verified.filter((f) => f && f.verdict && f.verdict.isReal)
-  const refuted = verified.filter((f) => f && (!f.verdict || !f.verdict.isReal))
-  log(`load-bearing: ${confirmed.length} confirmed, ${refuted.length} refuted/unverified`)
+  const statusOf = (f) => (f && f.verdict && f.verdict.status) || 'unconfirmed'
+  const confirmed = verified.filter((f) => f && statusOf(f) === 'confirmed')
+  const refuted = verified.filter((f) => f && statusOf(f) === 'refuted')
+  const unconfirmed = verified.filter((f) => f && statusOf(f) === 'unconfirmed')
+  log(`load-bearing: ${confirmed.length} confirmed, ${refuted.length} refuted, ${unconfirmed.length} unconfirmed`)
 
   const sources = [...new Set(findings.flatMap((f) => f.sources || []).filter(Boolean))]
 
@@ -170,7 +180,8 @@ run(async () => {
     findingCount: findings.length,
     findingsByAngle: perAngle,
     confirmedClaims: confirmed.map((f) => ({ angle: f.angle, claim: f.claim, verifiedBy: f.verifyFamily, source: (f.verdict && f.verdict.bestSource) || (f.sources || [])[0] })),
-    unverifiedClaims: refuted.map((f) => ({ angle: f.angle, claim: f.claim, why: f.verdict && f.verdict.reasoning })),
+    refutedClaims: refuted.map((f) => ({ angle: f.angle, claim: f.claim, why: f.verdict && f.verdict.reasoning, scope: f.verdict && f.verdict.scope })),
+    unconfirmedClaims: unconfirmed.map((f) => ({ angle: f.angle, claim: f.claim, why: f.verdict && f.verdict.reasoning, scope: f.verdict && f.verdict.scope })),
     sources,
   }
 })

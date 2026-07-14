@@ -24,7 +24,7 @@ tools if any, else web), the orchestration mechanism, and how claims were verifi
 - **Question:** {the research question}
 - **Perspectives covered:** {angle 1}, {angle 2}, …
 - **Sources:** {web / internal MCP tools / both}
-- **Verification:** load-bearing claims adversarially verified ({n} confirmed, {m} unverified)
+- **Verification:** load-bearing facts resolved from authoritative/primary sources and adversarially verified ({n} confirmed, {r} refuted, {u} unconfirmed)
 
 ## Key Findings
 
@@ -48,13 +48,17 @@ load-bearing statement in a cited source. -->
 
 ## Verified vs. Unverified Claims
 
-**Verified (independently corroborated):**
+**Confirmed (authoritative/primary source):**
 
 - {claim} — {source} [n]
 
-**Unverified / contested (kept, but flagged):**
+**Refuted (primary source contradicts the claim):**
 
-- {claim} — {why it could not be confirmed}
+- {claim} — {what the source actually shows} [n]
+
+**Unconfirmed (could not establish — kept, NOT treated as false):**
+
+- {claim} — {scope checked: sources / versions / conditions, and why it stayed open}
 
 ## Assumptions Made
 
