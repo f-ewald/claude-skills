@@ -20,9 +20,7 @@ approach, and the expected outcome. A reader should grasp the whole doc from thi
 
 | Name | Team | Date | Comment |
 |------|------|------|---------|
-| {reviewer 1} | {team} |  |  |
-| {reviewer 2} | {team} |  |  |
-| {reviewer 3} | {team} |  |  |
+| {one row per confirmed reviewer; remove this row if none} | {team} |  |  |
 
 ## Problem Statement
 
@@ -47,26 +45,21 @@ constraints/requirements that bound the solution. Be concrete and evidence-based
 <!-- One subsection per alternative. Ground pros/cons in the research; cite
 sources by their reference number, e.g. [1]. End with the comparison table. -->
 
-### Alternative 1 — {name}
+### {Alternative name}
 
 {Summary of the approach.}
 
 - **Pros:** {…}
 - **Cons:** {…}
-
-### Alternative 2 — {name}
-
-{Summary of the approach.}
-
-- **Pros:** {…}
-- **Cons:** {…}
+- **Evidence status:** {verified findings, refuted claims, and unconfirmed claims}
 
 ### Comparison
 
-| Alternative | {Criterion A} | {Criterion B} | {Criterion C} |
-|-------------|---------------|---------------|---------------|
-| {name 1} | … | … | … |
-| {name 2} | … | … | … |
+<!-- Add/remove alternatives and criteria to match the approved comparison. -->
+
+| Alternative | {Criterion A} | {Criterion B} |
+|-------------|---------------|---------------|
+| {one row per alternative} | … | … |
 
 ## Recommendation / Conclusion
 
@@ -77,21 +70,19 @@ given the goals and constraints. Reference the comparison above. -->
 
 ## Risks & Open Questions
 
-- **Risk:** {description} — *Mitigation:* {…}
+- **Risk:** {description} — *Mitigation:* {…} — *Evidence:* {verified / unconfirmed}
 - **Open question:** {something still undecided or needing input}
+- **Refuted premise:** {claim that research disproved, if material}
 
 ## Execution Plan
 
-| Task | Estimate (weeks) |
-|------|------------------|
-| {task 1} | {n} |
-| {task 2} | {n} |
-| {task 3} | {n} |
-| **Total** | **{sum}** |
+| Task | Estimate ({chosen unit or TBD}) |
+|------|---------------------------------|
+| {one row per task} | {estimate or TBD} |
+| **Total** | **{total only when meaningful; otherwise TBD}** |
 
 ## References
 
 <!-- Every source from the research phase, numbered. Cite these inline above by number. -->
 
-1. {Title} — {URL}
-2. {Title} — {URL}
+1. {One row per cited source: title — URL}

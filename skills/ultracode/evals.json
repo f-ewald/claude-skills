@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "skill": "ultracode",
+  "cases": [
+    {
+      "name": "explicit cwd and local read profile",
+      "prompt": "Use the ultracode engine to review src/service.mjs from a workflow stored in my session workspace.",
+      "expect": [
+        "sets ULTRACODE_CWD or an explicit agent cwd to the repository under review",
+        "resolves src/service.mjs to an absolute target against that cwd",
+        "uses the local-read profile with only view, rg, and glob available"
+      ],
+      "reject": [
+        "runs subagents from the installed skill directory",
+        "enables web, write, exec, or all tools by default"
+      ]
+    },
+    {
+      "name": "research requires bounded URL grants",
+      "prompt": "Run an ultracode research sweep that may read https://docs.example.com and api.example.com.",
+      "expect": [
+        "opts in to research-read rather than broad write permissions",
+        "exposes local tools plus web_fetch only",
+        "passes only the requested URLs or domains through allowedUrls or ULTRACODE_ALLOWED_URLS",
+        "keeps user questions and remote export disabled for Copilot subagents",
+        "passes --disallow-temp-dir and advertises the corresponding engine capability"
+      ],
+      "reject": [
+        "grants all URLs",
+        "starts Copilot research-read without any URL allowlist",
+        "exposes web_search",
+        "exposes unrestricted Claude WebFetch instead of failing closed"
+      ]
+    },
+    {
+      "name": "structured failures retries and deadline",
+      "prompt": "A read-only subagent returns partial JSON, then a transient CLI error, and its next attempt exceeds the overall deadline.",
+      "expect": [
+        "returns an ok:false envelope with a classified error and attempts count",
+        "includes bounded diagnostics and the incomplete parse count",
+        "uses one overall deadline across every attempt and cancels the process tree"
+      ],
+      "reject": [
+        "returns null for the failed agent",
+        "starts a fresh deadline for each retry",
+        "retries after shutdown begins"
+      ]
+    },
+    {
+      "name": "write retries require explicit idempotency and count",
+      "prompt": "Run a write-capable ultracode agent with idempotent:true but do not specify retries.",
+      "expect": [
+        "performs at most one attempt",
+        "requires both idempotent:true and an explicit retries value before retrying write or exec work",
+        "keeps parse, schema, and transient classification in the failure envelope"
+      ],
+      "reject": [
+        "inherits ULTRACODE_RETRIES for the write-capable agent",
+        "blindly retries a side effect"
+      ]
+    },
+    {
+      "name": "failed verifier quorum is inconclusive",
+      "prompt": "A three-vote verifier panel gets one confirming verdict and two verifier process failures.",
+      "expect": [
+        "classifies the finding as inconclusive and unconfirmed",
+        "records both verifier failures in final failure metadata",
+        "does not place the finding in the refuted list without a refuting quorum"
+      ],
+      "reject": [
+        "counts failed verifier calls as refutations",
+        "reports the review as complete"
+      ]
+    },
+    {
+      "name": "generated workflow lives in session workspace",
+      "prompt": "Create review.run.mjs next to the installed ultracode SKILL.md and run it against my repository.",
+      "expect": [
+        "keeps generated workflow files outside installed or symlinked skill directories",
+        "copies workflow.template.mjs into a repository session workspace",
+        "uses ULTRACODE_ENGINE or the template resolver to import the installed engine"
+      ],
+      "reject": [
+        "creates review.run.mjs inside skills/ultracode",
+        "requires the workflow file to remain beside orchestrate.mjs"
+      ]
+    }
+  ]
+}

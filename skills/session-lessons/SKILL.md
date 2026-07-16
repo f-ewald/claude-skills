@@ -1,171 +1,170 @@
 ---
 name: session-lessons
-description: Mine a GitHub Copilot CLI session for mistakes the model made — places where it corrected itself or where the user had to correct it — distill each into a durable, generalizable rule, and, only after the user confirms it one-by-one, append it to the global COPILOT.md instructions or a repo-local instructions file so the same correction doesn't recur across sessions. Use when the user wants to capture lessons from a session, stop repeating the same corrections, turn what went wrong into rules, update their Copilot/global rules from a session, or asks things like "what mistakes did you make?", "learn from this session", or "add what you got wrong to COPILOT.md".
+description: Mine a local Claude Code or GitHub Copilot CLI session for observable corrections and mistakes, distill them into durable rules, and write only individually confirmed lessons to harness-appropriate global or repository instructions. Use when the user asks to learn from a session, capture mistakes as rules, stop repeated corrections, or update Claude/Copilot instructions from session evidence.
 license: MIT
-author: Freddy Ewald
-compatibility: GitHub Copilot CLI. Reads only local session data (~/.copilot/session-state/<id>/events.jsonl and the session_store_sql tool) and makes no network calls. Requires jq for the on-disk log path.
-allowed-tools: Bash(jq:*), Bash(ls:*), Bash(cat:*), Bash(sqlite3:*), Bash(git rev-parse:*), Bash(readlink:*)
+metadata:
+  author: Freddy Ewald
+compatibility: Claude Code and GitHub Copilot CLI. Requires Node.js 18+; optional installed sqlite3 supports Copilot metadata discovery. Reads only local session files and never requires jq, cloud session stores, or network access.
+allowed-tools: Bash(node:*) Bash(sqlite3:*) Bash(git:*)
 ---
 
 # Session lessons — turn corrections into rules
 
-Read a Copilot CLI session, find the **mistakes** the model made — the moments where it had to
-correct itself, or (worse) where the user had to correct it — distill each into a short, durable
-rule, and add the confirmed rules to the user's instructions file so the same mistake doesn't recur
-in future sessions. This is how a stateless assistant gains memory: by writing its lessons down.
+Analyze local session evidence through one adapter-based workflow, propose only
+defensible lessons, and write nothing until the user approves each lesson and
+the exact target diff.
 
-**Hard rule: change nothing on disk until the user confirms rules in Phase 5.** Phases 1–4 are
-strictly read-only — you are reading logs and drafting, not editing. Only Phase 6 writes, and only
-the rules the user explicitly confirmed.
+**Non-negotiable boundaries**
 
-**Local only.** This skill reads local session logs and edits local instruction files. It makes no
-network calls and runs no downloaded scripts.
+- Local-only: never call `session_store_sql`, cloud session stores, network APIs,
+  or downloaded scripts.
+- Observable evidence only: never read private reasoning, chain-of-thought,
+  `reasoningText`, or reasoning/thinking blocks.
+- Redact credentials, secrets, private identifiers, home-directory identities,
+  and unnecessary transcript content before displaying or writing it.
+- Never print raw JSONL lines or raw filesystem diagnostics. Report only a
+  sanitized source/line and generic parse reason; sanitize every stderr error.
+- Phases 1–5 are read-only. Only Phase 6 may write, and only after explicit
+  approval of the exact target set and diffs.
 
-## 1. Choose the session(s) to analyze
+Read [the local source schema and discovery reference](references/sources.md) and
+[the lesson, routing, and preflight protocol](references/protocol.md) before use.
 
-Default to the **current session**, but let the user redirect:
+## 1. Resolve the local session
 
-1. **Explicit override** — if the user named a session id, a past session, or "the last N sessions
-   for this repo", use exactly that.
-2. **Current session (default)** — your own session id is the folder name in the **`Session folder`**
-   path given in your session context (`~/.copilot/session-state/<session-id>/`). That folder's
-   `events.jsonl` is the live, full-fidelity log of this conversation.
-3. **Recent sessions for this repo** — list candidates with the `session_store_sql` tool (or the
-   registry DB) and let the user pick:
+Default to the current session, but honor overrides in this order:
 
-   ```sql
-   SELECT id, updated_at, substr(summary,1,70) AS summary
-   FROM sessions
-   WHERE cwd = '<repo dir>'          -- git_root of the current repo
-   ORDER BY updated_at DESC LIMIT 10;
-   ```
+1. Explicit source, session id, or transcript path from the user.
+2. Harness/session environment context.
+3. Most recent local session for the current repository.
 
-   (Fallback without the tool: `sqlite3 ~/.copilot/session-store.db "SELECT id, updated_at, summary
-   FROM sessions WHERE cwd='<repo dir>' ORDER BY updated_at DESC LIMIT 10;"`. Each session's
-   `~/.copilot/session-state/<id>/workspace.yaml` also records its `cwd`/`git_root`.)
+Use the zero-dependency normalizer:
 
-State the detected scope in one line (e.g. *"Analyzing the current session (1c8d237a…)"*) and let the
-user redirect before you dig in. **Skip the turn that invoked this skill** so you don't analyze your
-own invocation.
+```bash
+node skills/session-lessons/scripts/normalize-session.mjs \
+  --source auto --cwd "$(pwd)" --pretty
+```
 
-## 2. Read the transcript (read-only)
+Optional overrides are `--source claude|copilot`, `--session <id>`,
+`--input <jsonl>`, and `--home <path>`. The adapters read:
 
-Prefer the on-disk log — it is the freshest and most complete, especially for the *current* session
-whose latest turns may not be flushed to the store yet. For a session id `S`, its log is
-`~/.copilot/session-state/S/events.jsonl` (one JSON event per line: `.type`, `.data`, `.timestamp`).
+- Claude: `~/.claude/projects/<encoded-cwd>/<session-id>.jsonl`
+- Copilot: `~/.copilot/session-state/<session-id>/events.jsonl`
 
-Work cheap-signal-first so long sessions stay affordable:
+Copilot discovery may query the local `~/.copilot/session-store.db` through an
+installed `sqlite3` binary invoked with argv, never a shell. The normalizer has
+no third-party SQLite dependency. State the detected harness/session in one line
+and let the user redirect. Skip the turn that invoked this skill.
 
-- **User turns + interrupts** (cheapest, highest signal):
+## 2. Review normalized observable events
 
-  ```bash
-  jq -rc 'select(.type=="user.message" or .type=="abort")
-          | {t:.timestamp, type, text:(.data.content // .data.reason // "")}' \
-     ~/.copilot/session-state/S/events.jsonl
-  ```
+The shared event model contains only:
 
-- **Model turns** (read the ones *adjacent to* a correction to see what the model actually did;
-  `.data.content` is the reply, `.data.reasoningText` its reasoning):
+- `actor`: `user`, `assistant`, `system`, or `tool`
+- `kind`: `message`, `tool_call`, `tool_result`, or `abort`
+- redacted/bounded `text`, timestamp, source, and optional tool status
 
-  ```bash
-  jq -rc 'select(.type=="assistant.message")
-          | {t:.timestamp, text:(.data.content[0:400])}' \
-     ~/.copilot/session-state/S/events.jsonl
-  ```
+The JSONL reader tolerates an incomplete final line from a live session, while
+rejecting malformed complete lines. Work cheap-signal-first:
 
-- **Tool failures** the model then worked around: events of type `tool.execution_complete` with a
-  failure result, near a retry.
+1. User corrections and adjacent assistant messages.
+2. Repeated corrections.
+3. Model self-corrections.
+4. Observable tool failures and recoveries.
+5. Abort signals, with surrounding observable context.
 
-(The `session_store_sql` tool exposes the same material as `turns` — `user_message` /
-`assistant_response` — and `events`; use it instead if you prefer SQL or are mining several past
-sessions at once.)
+## 3. Extract and score candidate lessons
 
-## 3. Extract candidate mistakes
+Keep a candidate only when a durable written rule would likely prevent the
+mistake. Exclude new scope, ordinary iteration, and one-off preferences.
 
-Scan for evidence that the model got something wrong. Classify each candidate by how it surfaced:
+Signal confidence:
 
-- **User correction (strongest).** A user turn pushing back on what the model just did or said —
-  cues like *"no", "don't", "stop", "that's wrong", "that's not what I asked", "actually", "why did
-  you", "you should have", "I told you", "revert / undo", "not like that", "instead", "you broke"* —
-  **or** an `abort` event (`reason: user_initiated`), i.e. the user interrupted the model mid-action.
-  Read the preceding model turn(s) to see exactly what it did wrong and what the user wanted instead.
-- **Model self-correction.** A model turn admitting or repairing its own error — *"you're right",
-  "apologies / sorry", "my mistake", "that was incorrect", "let me fix / revert", "I should have",
-  "I misread", "on second thought"* — or the model undoing a change it made moments earlier, or a
-  tool failure caused by a wrong assumption that it then had to fix.
-- **Repeated correction (high priority).** The same class of mistake corrected more than once — in
-  one session or across the selected sessions. These are precisely the "same thing over and over"
-  worth a permanent rule; flag them first.
+- Repeated correction: highest.
+- Explicit user correction: high.
+- Model self-correction or reproducible tool mistake: medium.
+- Abort plus corroborating evidence: supporting evidence only.
+- Abort alone: low confidence; do not promote it to a permanent rule.
 
-For each candidate capture: **what the model did** (the mistake), **how it surfaced** (which signal,
-plus a turn timestamp and a short verbatim quote as evidence), and the **generalizable lesson**.
+For each candidate record the mistake, signal, timestamp, a short redacted
+quote, proposed imperative rule, scope, harness applicability, and confidence.
 
-**Filter out non-lessons** — keep false positives low:
-- A user adding new scope ("actually, also do X") is a *new request*, not a correction.
-- One-off preferences unlikely to recur, and normal iterative refinement, are not rules.
-- The test for keeping a candidate: *would a written rule have prevented this mistake from recurring?*
-  If not, drop it. Report only real, defensible lessons — do not pad.
+## 4. De-duplicate and detect conflicts
 
-## 4. Draft rules and present the table
+Read existing bullets from every proposed target before showing candidates.
+Use conservative token overlap/containment from
+`scripts/lesson-helpers.mjs` as **semantic-ish de-duplication**. Do not claim
+embeddings or semantic search.
 
-For each surviving candidate, write a **concise, imperative rule** in the style of the existing
-`COPILOT.md` bullets (short, one line where possible, an optional parenthetical *why*). De-duplicate
-against rules **already present** in the target files (see Phase 6) — if a lesson is already covered,
-drop it (you may note it was already covered). Suggest, for each, a **target** (global `COPILOT.md`
-vs. a repo-local instructions file) and a **section** (e.g. *Code Style*, *Safety…*, *Git commits*,
-or a new one).
+- Existing-rule precedence: if an existing rule covers the candidate, drop the
+  candidate and note the existing rule.
+- If similar rules have opposite polarity or incompatible actions, flag a
+  contradiction and ask the user to resolve it. Never auto-merge conflicts.
+- Merge repeated evidence for the same candidate rather than proposing duplicate
+  rules.
 
-Present every candidate in a single markdown table, and state explicitly that **nothing has been
-written yet**:
+## 5. Present and confirm one by one
 
-| # | Signal | Mistake (evidence) | Proposed rule | Suggested target · section |
-|---|--------|--------------------|---------------|----------------------------|
-| 1 | User correction | One-line mistake + short quote (ts). | The imperative rule. | global · Code Style |
-| 2 | Repeated | … | … | repo-local · Testing |
+First present all surviving candidates in one table and say explicitly:
+**nothing has been written yet**.
 
-If no genuine lessons were found, say so plainly and stop — an empty, honest result is a valid one.
+| # | Signal · confidence | Mistake and redacted evidence | Proposed rule | Target |
+| --- | --- | --- | --- | --- |
 
-## 5. Confirm each lesson one-by-one
+If there are no genuine lessons, say so and stop.
 
-Walk the candidates **in order, one at a time — never as a group**. For each, show the evidence
-quote(s), the mistake, and the proposed rule, then ask the user to decide with a multiple-choice
-question:
+Then walk candidates in order, one at a time:
 
-- **Accept as-is** — take the rule as written.
-- **Reject** — it wasn't really a mistake, or the user doesn't want a rule; drop it entirely.
-- **Rephrase** — the user reworks the wording or scope; capture the revision, read it back to
-  confirm, and use the agreed version.
+1. Show evidence, mistake, proposed rule, and any existing-rule conflict.
+2. Ask for **Accept as-is**, **Reject**, or **Rephrase**.
+3. For accepted/rephrased rules, confirm global vs repository and Claude,
+   Copilot, or shared applicability.
+4. Read back rephrased wording before accepting it.
 
-For every **accepted or rephrased** rule, also confirm **where it goes**, defaulting to your
-suggestion but letting the user switch:
+A shared global rule targets both harness files after one explicit confirmation.
+Still do not write during this phase.
 
-- **Global `COPILOT.md`** — applies to every future session (the user's personal instructions).
-- **Repo-local instructions file** — applies only inside this repository.
+## 6. Route, preflight, preview, and write
 
-Only accepted/rephrased rules proceed. Still nothing is written.
+Use `scripts/lesson-helpers.mjs` for deterministic routing and safety checks.
 
-## 6. Write the confirmed rules
+Routing:
 
-Locate each target and append surgically. **Write only to the chosen instructions file(s); do not
-edit any other rules file** (e.g. leave `CLAUDE.md` untouched — the user opted out of mirroring).
+- Claude global: `~/.claude/CLAUDE.md`
+- Copilot global: `~/.copilot/copilot-instructions.md`
+- Shared global: both files after one confirmation
+- Claude repository: `<repo>/CLAUDE.md`
+- Copilot repository: `<repo>/.github/copilot-instructions.md`
 
-- **Global `COPILOT.md`** = the Copilot personal-instructions file at
-  `~/.copilot/copilot-instructions.md`. If that path is a **symlink** (a common setup points it at a
-  repo-tracked `COPILOT.md`), edit the **resolved real file** (`readlink -f`) so the change lands in
-  the tracked source, not a dangling copy. If the user has this repo's `COPILOT.md` open/tagged, that
-  is the same file — edit it directly. If no such file exists, ask where the global rules live.
-- **Repo-local** = `<repo root>/.github/copilot-instructions.md` (repo root via
-  `git rev-parse --show-toplevel`). Create it with a minimal header if it doesn't exist, only after
-  the user confirmed a repo-local rule.
+Resolve symlinks portably with Node. If a global path resolves into this
+repository's distributed top-level `CLAUDE.md` or `COPILOT.md`, reconcile that
+pair together so their shared global rules remain synchronized.
 
-For each confirmed rule: insert it as a bullet under the **best-matching existing section**, or add a
-new `## <Topic>` section if none fits. Match the surrounding bullet style, and don't duplicate a rule
-already present. Keep the file tidy — if additions push a global rules file well past its ~200-line
-guidance, mention it so the user can prune.
+Before every write:
 
-## 7. Wrap up
+1. Resolve the canonical target path.
+2. Stop on company/enterprise-managed or do-not-edit markers.
+3. Inspect dirty state for repository targets.
+4. Insert under the best existing section without duplicating a rule.
+5. Create a write plan with the exact diff and SHA-256 digest of each complete
+   proposed replacement.
+6. Obtain explicit approval for that exact target set, diff, and digest.
+7. Re-read each target and abort if it changed after preview.
+8. Verify the supplied replacement matches the approved digest; boolean approval
+   alone is insufficient.
+9. Acquire an exclusive same-directory advisory lock with `wx`; fail closed and
+   never delete an existing unknown lock.
+10. Write through an exclusive same-directory temp file, preserve mode where
+   applicable, fsync/close, verify, recheck the digest, and atomically rename.
+11. Release only the exact owned lock, clean the exact temp file on failure,
+    then re-read and verify successful writes exactly. Non-cooperating external
+    writers still cause mismatch/blocked handling rather than silent retries.
 
-Summarize what was **accepted, rephrased, and rejected**; **which file** each new rule went into
-(global vs. repo-local) and under which section; any candidates that were **already covered**; and
-whether any file is now near/over its length guidance. Offer next steps — e.g. review the diff, or
-commit — but **don't commit and never open a PR** unless the user explicitly asks.
+Never overwrite unrelated dirty changes. Never commit or open a pull request
+unless the user separately requests it.
+
+## 7. Report
+
+Summarize accepted, rephrased, rejected, already-covered, and contradictory
+candidates. List each verified file and section changed. Mention any blocked
+managed file, dirty-state concern, concurrent change, or file-length concern.

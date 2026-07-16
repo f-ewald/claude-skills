@@ -1,20 +1,21 @@
 # Using these skills in GitHub Copilot
 
-> **Last verified: June 2026.** GitHub Copilot's Agent Skills support and the Agent Skills
+> **Last verified: July 2026.** GitHub Copilot's Agent Skills support and the Agent Skills
 > standard are evolving quickly. If the paths, settings, or UI steps below don't match your
 > version, re-check the linked docs in [References](#references).
 
-The skills in this repo (`skills/<name>/SKILL.md`) are written in the **Agent Skills** format —
-an open standard originally created by Anthropic and published at
-[agentskills.io](https://agentskills.io). GitHub Copilot (in VS Code and via the Copilot CLI)
-supports the **same** standard and discovers skills from the very same locations this repo
-already uses — **including the Claude paths** (`~/.claude/skills/...` and `.claude/skills/...`).
+The skills in this repo (`skills/<name>/SKILL.md`) use the open
+[Agent Skills](https://agentskills.io) format. GitHub Copilot in VS Code and the
+Copilot CLI can consume the same packages without conversion, but their
+**personal discovery paths differ**.
 
-That means **no conversion is needed**. Because `README.md` already symlinks this repo's `skills/`
-directory into `~/.claude/skills`, Copilot picks these skills up as-is. The only required
-frontmatter is `name` and `description`, which every skill here already has.
+- Copilot CLI: `~/.copilot/skills/` or `~/.agents/skills/`
+- VS Code: also recognizes `~/.claude/skills/`
+- Copilot CLI projects: `.github/skills/`, `.agents/skills/`, or `.claude/skills/`
 
-Skills Copilot will see from this repo: `adversarial-review`, `deep-research`, `design-doc`, `grill-me`, `review`, `session-lessons`, `ultracode`, `worklog`.
+The released set is maintained in the main
+[skill catalog](../README.md#skill-catalog-and-safety), which is also checked
+against the on-disk packages by `scripts/validate-skills.mjs`.
 
 ---
 
@@ -23,25 +24,34 @@ Skills Copilot will see from this repo: `adversarial-review`, `deep-research`, `
 - **For VS Code:** a recent VS Code with the **GitHub Copilot** and **GitHub Copilot Chat**
   extensions, signed in to a Copilot-enabled account.
 - **For the CLI:** the **GitHub Copilot CLI** installed and authenticated.
-- This repo cloned, with the symlink from `README.md` in place:
+- This repo cloned.
+- **For the CLI:** register the shared skill directory:
 
   ```bash
-  ln -s /path/to/claude-skills/skills/ ~/.claude/skills
+  copilot skill add /path/to/claude-skills/skills
   ```
 
-  Copilot discovers user-level skills from any of these (this repo uses the second one):
+- **For VS Code:** expose each package beneath a supported personal path:
 
-  - `~/.copilot/skills/<name>/SKILL.md`
-  - `~/.claude/skills/<name>/SKILL.md`  ← satisfied by the symlink above
-  - `~/.agents/skills/<name>/SKILL.md`
+  ```bash
+  mkdir -p "$HOME/.claude/skills"
+  for skill in /path/to/claude-skills/skills/*; do
+    target="$HOME/.claude/skills/$(basename "$skill")"
+    [ -e "$target" ] || ln -s "$skill" "$target"
+  done
+  ```
 
-  And project-level skills from `.github/skills/`, `.claude/skills/`, or `.agents/skills/`.
+  Copilot CLI users may use the same per-package pattern under
+  `~/.copilot/skills/` or `~/.agents/skills/` instead of `copilot skill add`.
+  Do not link the whole `skills/` directory to an existing destination;
+  standard `ln` behavior would create an extra nested `skills/` directory.
 
 ---
 
 ## Path A — VS Code Copilot
 
-1. **Confirm the symlink resolves.** The skill folders should be visible under your home dir:
+1. **Confirm a supported personal path resolves.** For the shared Claude/VS Code
+   installation:
 
    ```bash
    ls -l ~/.claude/skills
@@ -52,11 +62,8 @@ Skills Copilot will see from this repo: `adversarial-review`, `deep-research`, `
 2. **Open Copilot Chat in Agent mode.** Open the **Chat** view, then switch the mode selector to
    **Agent**. (Skills are loaded by the agent, not by inline completions.)
 
-3. **Verify the skills are detected.** In the Chat view, open **Configure Chat** (the gear icon)
-   and go to the **Skills** tab. Confirm `review` and `grill-me` are listed.
-
-   > If the Skills tab is empty or missing, the feature may be behind a setting in your version —
-   > enable skills in **Settings**, then reload the window (`Developer: Reload Window`).
+3. **Verify the skills are detected.** Use the current VS Code skills management
+   surface, then reload the window after adding or changing packages.
 
 4. **Use a skill.** Two ways:
 
@@ -64,6 +71,9 @@ Skills Copilot will see from this repo: `adversarial-review`, `deep-research`, `
      paste a PR URL: *"Review this PR: https://github.com/owner/repo/pull/123"*. Copilot matches
      it to the `review` skill and loads the full `SKILL.md` on demand.
    - **Explicitly** — type `/` in the chat input and pick the skill by name.
+
+   The custom `deeper-research` name is intentional: it does not shadow Claude
+   Code's bundled `/deep-research` workflow.
 
 5. **(Optional) Share a skill with a team.** Copy or symlink a skill into a repository at
    `.github/skills/<name>/SKILL.md` (or `.claude/skills/<name>/SKILL.md`) and commit it. Everyone
@@ -75,9 +85,14 @@ Skills Copilot will see from this repo: `adversarial-review`, `deep-research`, `
 
 1. **Install and authenticate** the GitHub Copilot CLI, and confirm it launches.
 
-2. **No extra setup for these skills.** The CLI uses the same discovery locations as VS Code, so
-   the existing `~/.claude/skills` symlink already exposes `review` and `grill-me` at the
-   user level. Project-level `.github/skills` / `.claude/skills` also work.
+2. **Verify discovery.**
+
+   ```bash
+   copilot skill list
+   ```
+
+   A personal `~/.claude/skills` symlink alone is not sufficient for Copilot
+   CLI. Use `~/.copilot/skills`, `~/.agents/skills`, or `copilot skill add`.
 
 3. **Trigger a skill.** Run the CLI in (or pointed at) your project, then either describe the
    matching task in natural language or invoke the skill by name. Any bundled `scripts/` or
@@ -91,27 +106,29 @@ Skills Copilot will see from this repo: `adversarial-review`, `deep-research`, `
   it should present a **summary table first**, walk findings **one-by-one**, and **post nothing**
   to GitHub until you confirm each one.
 - Ask: *"Grill me on this plan"* and confirm the `grill-me` skill activates.
+- Ask for *"deeper research on this topic"* and confirm the portable custom
+  workflow activates rather than a harness-native similarly named feature.
 
 **Troubleshooting — skill not showing up:**
 
 - The folder name must match the `name:` field in the skill's frontmatter.
 - The `description:` field must be present (it's how Copilot decides relevance).
-- Check the symlink/path actually resolves (`ls -l ~/.claude/skills/<name>/SKILL.md`).
+- Check the relevant path resolves (`ls -l ~/.copilot/skills/<name>/SKILL.md`)
+  or inspect custom directories with `copilot skill list`.
 - Reload the VS Code window after adding or changing skills.
 
 ---
 
 ## Bonus: carry over the global rules too
 
-The same standard means Copilot in VS Code also reads a **`CLAUDE.md`** file as always-on
-instructions (controlled by the `chat.useClaudeMdFile` setting). So this repo's coding rules can
-apply in Copilot as well — place or symlink a `CLAUDE.md` at your workspace root, or rely on the
-global `~/.claude/CLAUDE.md`.
+Custom instructions are a separate feature from Agent Skills. VS Code can read
+`CLAUDE.md` when that support is enabled; this does not make `CLAUDE.md` part of
+the Agent Skills standard.
 
 For the **Copilot CLI**, the global rules travel through Copilot's own personal-instructions file:
 symlink this repo's [`COPILOT.md`](../COPILOT.md) to `~/.copilot/copilot-instructions.md` (see the
-main [README](../README.md#github-copilot-global-rules)). The CLI also reads a `CLAUDE.md` directly,
-so inside this repo the rules already apply via the distributed `~/.claude/CLAUDE.md`.
+main [README](../README.md#github-copilot-global-rules)). Repository-level
+instruction files may also apply independently of the personal skills location.
 
 ---
 

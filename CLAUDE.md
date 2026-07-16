@@ -7,9 +7,9 @@
 - Use best practices for specific languages. Per-language standards and required libraries live in `programming-standards/<language>.md` (e.g. `programming-standards/python.md`) and take precedence over general guidance (like PEP 8) where they conflict.
 - Avoid using global variables; instead, pass necessary data through method parameters or use class-level variables when appropriate.
 - Avoid big refactors unless specifically asked to do so. Focus on making minimal necessary changes to achieve the migration goals while maintaining code stability.
-- When refactoring, or adding making major changes, make sure to update the CLAUDE.md to reflect the new structure and rules.
+- When refactoring or making major changes, update the relevant always-on instructions file (`CLAUDE.md` and `COPILOT.md`) to reflect the new structure and rules.
 - When solving an issue and you encounter debug statements, explicitly ask the user if it is ok to remove them.
-- The CLAUDE.md should contain less than 200 lines in the ideal case.
+- These global-rules files should contain less than 200 lines in the ideal case.
 
 ## Safety with destructive commands
 - Before running `rm -rf` (or any irreversible command — `rm`, an overwriting `mv`,
@@ -26,6 +26,8 @@
 - Be extra careful in shared or stateful directories (`~/.copilot`, `~/.claude`,
   home config) — deleting there can corrupt a live session or another process's state.
 
-## File Management
-- A `todo.md` file may be maintained that contains todos. Offer to work on them one by one and mark them as done.
-- A `bugs.md` file may be maintained. Whenever the user asks to fix bugs, offer to look them up and mark them as done once done.
+## Git commits
+- Do not add a `Co-authored-by` trailer to git commits, and do not otherwise list
+  the AI assistant as an author or co-author.
+- Never create pull requests unless the user explicitly asks you to. Committing when
+  requested is fine, but do not open, push, or draft a PR on your own initiative.

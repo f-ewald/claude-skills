@@ -1,20 +1,48 @@
-# Collection of Claude Skills
+# Cross-harness Agent Skills
 
-* `skills/` contains the actual skills, organized by category.
-* `CLAUDE.md` contains the global rules that apply to all Claude sessions.
+* `skills/` contains reusable Agent Skills shared by Claude Code and GitHub Copilot.
+* `CLAUDE.md` contains the global rules for Claude Code.
+* `COPILOT.md` contains the equivalent global rules for GitHub Copilot CLI.
 * `programming-standards/` contains per-language coding standards and required libraries (e.g. `python.md`).
 
 
-## How to use
+## Install
 
-1. Clone this repository to your local machine
-2. Create a symlink to the `skills/` directory inside your `~/.claude/` folder
+Clone this repository, then expose the shared skills through each harness's
+personal discovery path. Do not run a whole-directory `ln -s` command when the
+destination already exists: `ln` would create an incorrectly nested `skills/`
+entry.
+
+**Claude Code:**
+
 ```bash
-ln -s /path/to/claude-skills/skills/ ~/.claude/skills
+mkdir -p "$HOME/.claude/skills"
+for skill in /path/to/claude-skills/skills/*; do
+  target="$HOME/.claude/skills/$(basename "$skill")"
+  [ -e "$target" ] || ln -s "$skill" "$target"
+done
+
+# Run these only when each destination is absent.
 ln -s /path/to/claude-skills/CLAUDE.md ~/.claude/CLAUDE.md
 ln -s /path/to/claude-skills/programming-standards/ ~/.claude/programming-standards
 ln -s /path/to/claude-skills/statusline.sh ~/.claude/statusline.sh
 ```
+
+**GitHub Copilot CLI:**
+
+```bash
+copilot skill add /path/to/claude-skills/skills
+
+# Run these only when each destination is absent.
+ln -s /path/to/claude-skills/COPILOT.md ~/.copilot/copilot-instructions.md
+ln -s /path/to/claude-skills/programming-standards/ ~/.copilot/programming-standards
+```
+
+Copilot CLI also supports per-skill links under `~/.copilot/skills/` or
+`~/.agents/skills/`. A personal
+`~/.claude/skills/` symlink is discovered by Claude Code and VS Code, but not by
+Copilot CLI. Project-level `.github/skills/`, `.agents/skills/`, and
+`.claude/skills/` are supported by Copilot CLI.
 
 > **Company-managed rules:** If `~/.claude/CLAUDE.md` is already provided and managed by your company, don't overwrite it. Symlink this repo's rules under an alternate name instead (e.g. `ln -s /path/to/claude-skills/CLAUDE.md ~/.claude/CLAUDE.personal.md`) so the company file stays intact, and reference the personal file from the company-managed `CLAUDE.md` (e.g. with an `@CLAUDE.personal.md` import) if you want both to apply.
 
@@ -23,7 +51,7 @@ Update your `~/.claude/settings.json` and add the following as a root level key:
 ```
 "statusLine": {
     "type": "command",
-    "command": "bash /home/fewald/.claude/statusline.sh"
+    "command": "bash /path/to/claude-skills/statusline.sh"
 }
 ```
 
@@ -142,113 +170,108 @@ Copilot CLI reads `~/.copilot/copilot-instructions.md` as personal (global) cust
 These skills use the open Agent Skills (`SKILL.md`) standard, which GitHub Copilot also supports —
 see [docs/using-skills-in-copilot.md](docs/using-skills-in-copilot.md) for step-by-step instructions.
 
-## Adversarial review — critique your own changes
+## Skill catalog and safety
 
-[`skills/adversarial-review/`](skills/adversarial-review/) turns the agent into a hostile reviewer of
-**your own** work: it auto-detects your changes (uncommitted, else the current branch vs its base),
-hunts for real flaws and action items, and presents them as a summary table — **changing nothing on
-disk**. It then offers to build a fix **todo list** you curate one-by-one (**accept as-is / reject /
-rephrase**), and only after you approve the plan does it implement the fixes, one at a time.
+<!-- skill-catalog:start -->
+| Skill | Primary output | Prerequisites | Network | Writes / destructive behavior |
+| --- | --- | --- | --- | --- |
+| `adversarial-review` | Curated fixes to the user's changes | Git | None | Read-only until plan approval; surgical edits afterward; no commit or push |
+| `deeper-research` | Cited Markdown research report | Node 18+, sibling ultracode; approved sources | Opt-in public web or configured read-only internal tools | Report only; no destructive actions |
+| `design-doc` | Reviewed Markdown RFC; optional Google Doc | grill-me and deeper-research contracts | Research sources; optional approved Google Docs | Confirms before replacing a file |
+| `grill-me` | In-chat decision ledger and final reconciliation | None | None | Read-only and chat-only unless an artifact is explicitly requested |
+| `review` | One confirmed GitHub pull-request review | Authenticated gh | GitHub or GHES API | Posts only confirmed comments; submission is explicit |
+| `session-lessons` | Confirmed durable instruction rules | Node 18+ and local harness transcripts | None | Previews and confirms each local instruction-file edit |
+| `ultracode` | Structured multi-agent workflow result | Node 18+ and a supported agent CLI | None in local-read; opt-in in research-read | Read-only by default; write/exec requires an explicit profile |
+| `worklog` | Local worklog entries and summaries | Node 18+ and wl 0.4.x | Only an explicitly confirmed wl github operation | Uses a JSON-to-argv adapter; confirms initialization, imports, bulk writes, and overwrites |
+<!-- skill-catalog:end -->
 
-**Invoke it** by asking for an *"adversarial review"* of your changes (or *"critically review what I
-just wrote"*). See [`skills/adversarial-review/SKILL.md`](skills/adversarial-review/SKILL.md) for the
-full phase-by-phase contract.
+All packages support Claude Code and GitHub Copilot unless their
+`compatibility` field says otherwise. `allowed-tools` is experimental Agent
+Skills metadata: Claude may honor narrow command grants, while Copilot CLI may
+prompt through its own permission system. Do not replace those prompts with
+broad shell approval.
 
-## Session lessons — turn corrections into rules
+### `adversarial-review`
 
-[`skills/session-lessons/`](skills/session-lessons/) gives a stateless assistant a memory: it reads a
-Copilot CLI session, finds the **mistakes** the model made — where it corrected itself, or where you
-had to correct it (including turns you interrupted) — and distills each into a short, durable rule. It
-presents the candidates as a summary table **without writing anything**, walks them **one-by-one**
-(**accept / reject / rephrase**), and only then appends each confirmed rule — to your global
-[`COPILOT.md`](COPILOT.md) or a repo-local `.github/copilot-instructions.md`, as you choose per rule —
-so the same correction doesn't recur next session.
+Use for a skeptical review of your own uncommitted work or branch. It confirms
+the review scope, treats source content as untrusted, reports only defensible
+findings, and lets you accept, reject, or rephrase fixes one-by-one. Validation
+must pass before a fix is marked done.
+[Contract](skills/adversarial-review/SKILL.md)
 
-**Invoke it** by asking to *"learn from this session"*, *"what mistakes did you make?"*, or to *"add
-what you got wrong to COPILOT.md"*. It reads only local session data and makes no network calls. See
-[`skills/session-lessons/SKILL.md`](skills/session-lessons/SKILL.md) for the full phase-by-phase contract.
+### `deeper-research`
 
-## Ultracode — multi-agent orchestration skill
+Use for exhaustive, multi-perspective research with explicit assumptions,
+source-backed findings, verifier voting, completeness criticism, and a
+conclusion red-team. It is the portable custom workflow; Claude Code's bundled
+`/deep-research` remains available separately.
+[Contract](skills/deeper-research/SKILL.md) ·
+[CLI guide](skills/deeper-research/README.txt)
 
-[`skills/ultracode/`](skills/ultracode/) is a heavier skill that puts the agent into a standing
-**multi-agent orchestration** mode for a task: rather than working solo, it fans each step out to
-parallel subagents, adversarially verifies every finding, then synthesizes
-(`find → verify → synthesize`). It is **cross-harness** — on Claude Code it drives the native
-`Workflow` tool; on the **GitHub Copilot CLI** it ships its own zero-dependency Node engine
-([`orchestrate.mjs`](skills/ultracode/orchestrate.mjs)) that reproduces the same deterministic
-fan-out by shelling out to real `copilot -p` subagents.
+### `design-doc`
 
-**Invoke it** by asking to *"use ultracode"* (or `/ultracode`) at the start of a task — that is the
-standing opt-in to orchestration for the rest of that task.
+Use when the deliverable is an RFC or technical design. It composes the
+`grill-me` interview and `deeper-research` evidence contracts, obtains
+recommendation sign-off, and writes only to a confirmed target. Google Docs
+conversion is optional; Markdown remains the fallback.
+[Contract](skills/design-doc/SKILL.md)
 
-**On the Copilot CLI (deterministic engine):**
+### `grill-me`
+
+Use for a standalone design stress test. It asks one decision at a time,
+provides a recommended default and rationale, grounds factual questions in the
+codebase, and maintains an in-chat ledger until every material branch is
+reconciled.
+[Contract](skills/grill-me/SKILL.md)
+
+### `review`
+
+Use with a GitHub or GHES pull-request URL. It pins the reviewed head SHA,
+supports added and deleted line locations, inventories pending reviews, and
+posts only findings confirmed one-by-one. It never silently submits a partial
+review.
+[Contract](skills/review/SKILL.md)
+
+### `session-lessons`
+
+Use to turn observable corrections from a local Claude Code or Copilot CLI
+session into durable rules. It normalizes local transcripts, redacts sensitive
+evidence, detects duplicate or conflicting rules, previews exact diffs, and
+writes only after per-rule confirmation.
+[Contract](skills/session-lessons/SKILL.md)
+
+### `ultracode`
+
+Use for explicit multi-agent orchestration. Claude Code can use its native
+workflow facilities; Copilot CLI can use the bundled zero-dependency engine.
+The custom skill is separate from any harness-native effort level or workflow
+feature. Workflows use structured success/failure envelopes and local-read
+permissions by default.
+[Contract](skills/ultracode/SKILL.md) ·
+[CLI guide](skills/ultracode/README.txt)
+
+### `worklog`
+
+Use to add or inspect personal entries through the local `wl` CLI. All
+user-provided values pass as argument arrays through the bundled adapter rather
+than shell interpolation. Queries are narrowed to the needed dates/projects,
+and sensitive or bulk operations require confirmation.
+[Contract](skills/worklog/SKILL.md)
+
+## Validate the portfolio
+
+No package manager is required:
 
 ```bash
-cd /path/to/claude-skills/skills/ultracode
-cp workflow.template.mjs my-review.mjs         # edit the CONFIG block + prompts for your task
-ULTRACODE_CLI=copilot node my-review.mjs path/to/file
+node scripts/validate-skills.mjs
+node --test tests/*.test.mjs
 ```
 
-Subagents are **read-only by default** (a view/search allowlist — no file writes or arbitrary
-shell); opt into full autonomy with `ULTRACODE_PERMS=all` only when a workflow must edit files or
-run commands. See [`skills/ultracode/README.txt`](skills/ultracode/README.txt) for the full Copilot
-guide (install, Options A/B, env vars, troubleshooting) and
-[`skills/ultracode/SKILL.md`](skills/ultracode/SKILL.md) for the behavioral contract.
+The validator intentionally supports only this repository's bounded
+frontmatter shape; it is not a general YAML or JSON Schema implementation.
 
-> Verified end-to-end on the Copilot CLI — the engine drives real `copilot -p` subagents through
-> the find → adversarially-verify → synthesize pipeline.
-
-## Deep research — autonomous multi-perspective research
-
-[`skills/deep-research/`](skills/deep-research/) fuses two of the skills above into an **autonomous
-researcher**. It decomposes a question into as wide a set of sub-questions as possible (the
-**grill-me** move) but — unlike grill-me — **auto-answers** each one the way a reasonable person
-would, logging every decision to an **"Assumptions made"** ledger instead of interrupting you. It
-then fans the investigation out to parallel subagents, one per perspective (technical, adoption,
-economics, risk, alternatives, counter-arguments…), **adversarially verifies** the load-bearing
-claims, and synthesizes a **cited markdown report**. The user is pulled in only at three
-checkpoints — **start**, **mid-research**, **end** — and only for genuinely blocking decisions, so
-the agents run long and autonomously.
-
-It **reuses the ultracode engine by reference** — its workflow template imports
-[`../ultracode/orchestrate.mjs`](skills/ultracode/orchestrate.mjs), so install both skills side by
-side. On Claude Code it uses the native `Workflow` tool; with no orchestration at all it degrades to
-sequential research. Sourcing is **company-agnostic**: internal MCP research tools are used only if
-connected, otherwise web-only.
-
-**On the Copilot CLI:**
-
-```bash
-cd /path/to/claude-skills/skills/deep-research
-cp research.workflow.template.mjs research.run.mjs      # edit TOPIC + ANGLES
-ULTRACODE_CLI=copilot node research.run.mjs "Your research question" > result.json
-```
-
-For more diverse perspectives it can also spread researchers across a **heterogeneous model pool** —
-rotating model families and using cheap models for easy angles, stronger models for hard reasoning
-and verification — via the workflow's `MODELS` config or the `ULTRACODE_MODELS` env var (best-effort:
-it falls back to a single model when a pool isn't available).
-
-Research subagents are **read-only** — never set `ULTRACODE_PERMS=all` for a research run. The
-markdown report can optionally be converted to other formats by delegating (e.g. the
-`write-google-docs` skill, or `pandoc` for PDF/HTML). **Invoke it** by asking for *"deep research
-on …"* or an *"exhaustive multi-perspective investigation"*. See
-[`skills/deep-research/SKILL.md`](skills/deep-research/SKILL.md) for the full phase-by-phase
-contract and [`skills/deep-research/README.txt`](skills/deep-research/README.txt) for the Copilot
-CLI run guide.
-
-## Worklog — drive the `wl` CLI as a skill
-
-[`skills/worklog/`](skills/worklog/) is a **command-interface** skill that lets the agent operate a
-personal work log through the `wl` CLI — a stand-in for a
-worklog **MCP server** (MCP integrations are disallowed in some environments, so this skill is the
-workaround). It maps natural-language requests onto `wl` subcommands: `add` an entry, `show` a day or
-range, and inspect `projects`, `people`, `tags`, `stats`, `standup`, and `summary`. It also documents
-the safety rails — confirm before `remove`/`storage import`, never run the interactive `wl edit` or
-the blocking `wl server` inline — and how to strip `wl`'s Ruby-Logger `DEBUG` output noise
-(`| grep -Ev '^D, \['`) while keeping `INFO`/`WARN`/`ERROR` confirmations.
-
-**Requires** the `wl` binary on `$PATH` (`command -v wl`); all data stays local under `~/.worklog/`.
-**Invoke it** by asking to *"log that I …"*, *"what did I do yesterday?"*, *"show my standup"*, or
-*"list my worklog projects"*. See [`skills/worklog/SKILL.md`](skills/worklog/SKILL.md) for the full
-command reference and behavioral contract.
+After adding or changing a skill, restart or reload the active harness. For
+Copilot CLI, inspect discovery with `copilot skill list`. For VS Code, reload
+the window. If a skill is missing, verify that the folder matches `name:`, the
+description says what the skill does and when to use it, and the symlink or
+custom directory resolves.

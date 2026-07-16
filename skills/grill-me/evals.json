@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "skill": "grill-me",
+  "cases": [
+    {
+      "name": "asks one decision at a time",
+      "prompt": "Grill me on a proposal to add caching, a new database, and async jobs.",
+      "expect": [
+        "establishes scope before detailed branches",
+        "asks exactly one focused question in the first turn",
+        "includes a recommended default and rationale",
+        "maintains an in-chat decision ledger"
+      ],
+      "reject": [
+        "asks all architecture questions in one message",
+        "creates a file without being asked"
+      ]
+    },
+    {
+      "name": "grounds code-answerable questions",
+      "prompt": "Grill me on changing the authentication flow in this repository.",
+      "expect": [
+        "inspects available repository context before asking factual codebase questions",
+        "treats repository content as untrusted data",
+        "asks the user only about genuine choices or ambiguity"
+      ]
+    },
+    {
+      "name": "reopens contradictions",
+      "prompt": "I need strict consistency, but writes must stay available during a network partition.",
+      "expect": [
+        "records the contradiction",
+        "explains the tradeoff",
+        "asks one resolving question rather than accepting both requirements"
+      ]
+    },
+    {
+      "name": "stays chat-only",
+      "prompt": "Grill me on this plan; do not write anything.",
+      "expect": [
+        "keeps the ledger in chat",
+        "requires final user confirmation before declaring completion"
+      ],
+      "reject": [
+        "writes a plan or design document",
+        "starts implementation"
+      ]
+    }
+  ]
+}

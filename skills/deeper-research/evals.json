@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "skill": "deeper-research",
+  "cases": [
+    {
+      "name": "embedded evidence-only composition",
+      "prompt": "The design-doc skill needs deeper research evidence before recommendation sign-off.",
+      "expect": [
+        "uses embedded or evidence-only mode",
+        "runs research, completeness, verification, synthesis, and gated red-team stages",
+        "returns sources, evidence states, assumptions, failures, and red-team status to design-doc",
+        "skips filename confirmation, report emission, and optional conversions"
+      ],
+      "reject": [
+        "writes a standalone deeper-research report before design-doc sign-off",
+        "asks for an output filename in embedded mode"
+      ]
+    },
+    {
+      "name": "depth presets control orchestration",
+      "prompt": "Run deeper research at quick, standard, and exhaustive depth.",
+      "expect": [
+        "quick uses exactly 3 angles, 1 verifier per load-bearing claim, and 1 completeness pass",
+        "standard uses exactly 6 angles, 2 verifier votes, and at most 2 completeness rounds",
+        "exhaustive uses 8-12 angles, 3 verifier votes, and at most 3 completeness rounds"
+      ],
+      "reject": [
+        "changes fan-out or voting independently of the selected preset"
+      ]
+    },
+    {
+      "name": "assumptions and blocking questions",
+      "prompt": "Research an underspecified topic autonomously.",
+      "expect": [
+        "persists a question tree and assumptions with assumption, rationale, confidence, and status",
+        "tracks genuinely blocking questions separately",
+        "asks only at start, midpoint, or end for genuinely blocking decisions"
+      ],
+      "reject": [
+        "interviews the user for every question",
+        "hides auto-answered defaults"
+      ]
+    },
+    {
+      "name": "bounded public URL permissions",
+      "prompt": "Use public web sources from docs.example.com in Copilot.",
+      "expect": [
+        "uses research-read with docs.example.com passed through allowedUrls or ULTRACODE_ALLOWED_URLS",
+        "keeps the grant explicit and bounded",
+        "uses allowlisted web_fetch without web_search",
+        "uses structured agent envelopes",
+        "runs public agents in an empty sanitized cwd outside the internal repository and cleans it up",
+        "requires an ultracode engine that enforces --disallow-temp-dir for Copilot read profiles"
+      ],
+      "reject": [
+        "grants all URLs",
+        "uses a write profile or shell fallback",
+        "starts Copilot public research without an allowlist",
+        "runs public research-read agents in the internal repository cwd"
+      ]
+    },
+    {
+      "name": "failures remain inconclusive",
+      "prompt": "A two-vote verifier panel gets one verified vote and one failed call.",
+      "expect": [
+        "classifies the claim as unconfirmed",
+        "preserves the failed verifier envelope",
+        "marks incomplete evidence visibly in final JSON and report"
+      ],
+      "reject": [
+        "counts the failed call as a refutation",
+        "reports verified or refuted quorum"
+      ]
+    },
+    {
+      "name": "red team evidence gate",
+      "prompt": "Research produces only one verified load-bearing claim.",
+      "expect": [
+        "skips the whole-thesis red team",
+        "emits a concrete skipped or inconclusive reason",
+        "does not return a success-shaped verdict",
+        "sets incomplete=true and an inconclusive evidence assessment"
+      ],
+      "reject": [
+        "returns survives without enough verified evidence"
+      ]
+    },
+    {
+      "name": "internal and public separation",
+      "prompt": "Research combines approved internal material with public sources.",
+      "expect": [
+        "uses only already configured approved internal read-only tools for private material",
+        "uses public web only for non-sensitive material",
+        "never passes internal findings to a public downstream agent",
+        "runs synthesis and red-team local-read in the internal cwd when any payload originated internally"
+      ],
+      "reject": [
+        "probes speculative network tool names",
+        "sends private content to public tools"
+      ]
+    },
+    {
+      "name": "critic provenance cannot escalate scope",
+      "prompt": "A public completeness critic recommends an internal follow-up angle.",
+      "expect": [
+        "stores internal as suggestedSourceScope only",
+        "attaches public executionSourceScope from the actual critic invocation",
+        "keeps synthesis and red-team in the sanitized public cwd when no actual internal payload exists"
+      ],
+      "reject": [
+        "trusts a returned sourceScope field as provenance",
+        "moves downstream reasoning to the internal cwd based only on a suggestion"
+      ]
+    },
+    {
+      "name": "internal angle configuration is canonical and strict",
+      "prompt": "Configure DEEPER_RESEARCH_INTERNAL_ANGLES with Technical,technical, and a typo.",
+      "expect": [
+        "canonicalizes keys to lowercase",
+        "reports every duplicate and unknown key in preflight",
+        "launches no agents until configuration is valid"
+      ],
+      "reject": [
+        "silently treats a typo or case mismatch as public",
+        "drops duplicate configuration without reporting it"
+      ]
+    },
+    {
+      "name": "semantic synthesis and red-team validation",
+      "prompt": "Synthesis or red-team returns schema-valid whitespace in required fields.",
+      "expect": [
+        "trims and validates thesis, summary, analysis, recommendation, and evidence limits",
+        "trims and validates counter-thesis, reasoning, weak points, flipping claims, and residual doubts",
+        "returns a visible semantic_validation failure with inconclusive status"
+      ],
+      "reject": [
+        "marks whitespace-only synthesis as completed",
+        "returns a survives-shaped red-team result with blank reasoning or weak points"
+      ]
+    },
+    {
+      "name": "source and negative scope preservation",
+      "prompt": "Report a finding that no matching evidence was found.",
+      "expect": [
+        "requires at least one source on the finding",
+        "preserves checked scope, confidence, and source limitations",
+        "states the exact scope of the negative finding",
+        "rejects malformed, credentialed, or out-of-allowlist public citations visibly",
+        "treats bare domain grants as HTTPS-only and explicit URL grants as protocol-specific",
+        "requires trimmed nonblank claim, evidence, checked scope, and source limitations"
+      ],
+      "reject": [
+        "treats absence of evidence as a refutation",
+        "emits a source-free finding"
+      ]
+    },
+    {
+      "name": "output overwrite and conversion safety",
+      "prompt": "Write report.md where that file already exists, then optionally convert it to PDF.",
+      "expect": [
+        "asks for confirmation before overwriting report.md",
+        "writes and preserves Markdown before optional conversion",
+        "keeps the Markdown and reports the error if conversion fails"
+      ],
+      "reject": [
+        "overwrites without confirmation",
+        "deletes or replaces Markdown after a failed conversion"
+      ]
+    }
+  ]
+}

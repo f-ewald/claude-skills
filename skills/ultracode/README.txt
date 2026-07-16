@@ -1,212 +1,242 @@
 ==============================================================================
- ultracode — using it in GitHub Copilot CLI
+ ultracode deterministic engine
 ==============================================================================
 
-ultracode is a skill that puts the agent into a standing multi-agent
-orchestration mode: instead of doing substantive work solo, it fans the work
-out to subagents, adversarially verifies the findings, and synthesizes. On
-Claude Code it drives the native Workflow tool. On Copilot CLI it has no such
-engine built in, so this skill ships its own — a small Node script that gives
-you the same deterministic fan-out by shelling out to `copilot -p` once per
-subagent.
-
-This file explains how to run it under Copilot CLI specifically. For the full
-behavioral contract (the patterns, the mandate), read SKILL.md.
+ultracode provides standing multi-agent orchestration patterns plus a
+zero-dependency Node engine for runtimes without a native Workflow tool. The
+engine shells out to a supported headless CLI once per subagent while enforcing
+cwd, tool profiles, deadlines, retries, structured output, and process cleanup.
 
 
 ------------------------------------------------------------------------------
- 0. Requirements
+ 1. Requirements and installation
 ------------------------------------------------------------------------------
-  - GitHub Copilot CLI installed and on PATH (the `copilot` command), and
-    authenticated (run `copilot` once interactively and sign in if you haven't).
-  - Node.js >= 18 on PATH (only needed for Option A, the deterministic engine).
-  - This whole `ultracode/` directory, with all of:
-        SKILL.md              the skill (behavior + instructions)
-        orchestrate.mjs       the deterministic engine
-        workflow.template.mjs  a copy-and-adapt example
-        README.txt            this file
+  - Node.js >= 18.
+  - GitHub Copilot CLI or Claude Code CLI, installed and authenticated.
+  - The complete ultracode directory:
+        SKILL.md
+        orchestrate.mjs
+        workflow.template.mjs
+        README.txt
 
+Install or symlink the whole directory into a runtime skill location:
 
-------------------------------------------------------------------------------
- 1. Install
-------------------------------------------------------------------------------
-Copilot CLI reads user skills from ~/.copilot/skills/ (and also from the
-cross-runtime alias ~/.agents/skills/). Copy or symlink the ENTIRE directory —
-not just SKILL.md, because Option A needs the .mjs files next to it:
-
-    # copy
-    cp -R /Users/fewald/.claude/skills/ultracode ~/.copilot/skills/
-
-    # or symlink (keeps it in sync with the Claude Code copy)
-    ln -s /Users/fewald/.claude/skills/ultracode ~/.copilot/skills/ultracode
-
-Confirm Copilot can see it:
-
-    copilot
-    > /skills            # ultracode should be listed
+    ~/.copilot/skills/ultracode/
+    ~/.agents/skills/ultracode/
+    ~/.claude/skills/ultracode/
 
 
 ------------------------------------------------------------------------------
- 2. Invoke it
+ 2. Session workspace workflow files
 ------------------------------------------------------------------------------
-Inside a Copilot CLI session, trigger the skill (e.g. ask to "use ultracode"
-or invoke it as a skill). From that point, for the current task, the agent
-orchestrates instead of working solo. It will pick one of two mechanisms.
+Do not create generated run files inside an installed or symlinked skill
+directory. Copy workflow.template.mjs into a session workspace under the
+repository you are working in. The template has an engine resolver: set
+ULTRACODE_ENGINE to the absolute installed orchestrate.mjs path, or let it check
+the standard skill locations.
 
+Example, run from the repository under review:
 
-------------------------------------------------------------------------------
- 3. Option A — deterministic engine (preferred when Node is available)
-------------------------------------------------------------------------------
-This gives the closest parity with Claude Code's Workflow tool: a real
-concurrency cap, retries, and schema-validated structured output, all driven
-by a JS script you can read and re-run.
+    mkdir -p .copilot-session
+    cp "$HOME/.copilot/skills/ultracode/workflow.template.mjs" \
+       .copilot-session/review.mjs
 
-  Step 1. Copy the template to a working file and edit the CONFIG block +
-          prompts for your task. The find -> adversarially-verify pipeline is
-          already wired up.
+    ULTRACODE_ENGINE="$HOME/.copilot/skills/ultracode/orchestrate.mjs" \
+    ULTRACODE_CWD="$PWD" \
+    ULTRACODE_CLI=copilot \
+    node .copilot-session/review.mjs src/example.mjs
 
-          KEEP THE WORKFLOW FILE IN THIS DIRECTORY (next to orchestrate.mjs).
-          The template imports './orchestrate.mjs', and Node resolves that
-          relative to the workflow file's own location — not your shell's cwd —
-          so a copy in /tmp would fail to find the engine.
-
-              cd ~/.copilot/skills/ultracode
-              cp workflow.template.mjs my-review.mjs
-              # edit my-review.mjs: set TARGET, DIMENSIONS, prompts
-
-          (If you must keep the workflow elsewhere, change its import line to
-          the ABSOLUTE path of orchestrate.mjs, e.g.
-          import { ... } from '/Users/you/.copilot/skills/ultracode/orchestrate.mjs'.)
-
-  Step 2. Run it, telling the engine to use Copilot as the subagent runtime.
-          Run from this directory, or pass the workflow's full path (the engine
-          import still resolves because orchestrate.mjs sits beside it):
-
-              cd ~/.copilot/skills/ultracode
-              ULTRACODE_CLI=copilot node my-review.mjs path/to/file.py
-
-          Progress prints to STDERR; the final JSON result prints to STDOUT,
-          so you can capture just the result:
-
-              ULTRACODE_CLI=copilot node my-review.mjs src/app.py > result.json
-
-  Step 3. Read the JSON, decide the next phase, and run the next workflow.
-          Multi-phase work (understand -> design -> implement -> review) is
-          several scripts run back-to-back, reading each result in between.
-
-How it works: each agent() call in your script runs
-    copilot -p "<prompt>" --silent --no-color --log-level none <permission flags> [--model M]
-as a separate process — a fresh, real Copilot subagent. The engine collects
-their outputs, enforces your JSON schema by parsing, retries on bad output,
-and bounds how many run at once.
+Targets are resolved to absolute paths against ULTRACODE_CWD. Each subagent
+process also executes with that cwd. A workflow may override cwd per agent with
+agent(prompt, {cwd: '/absolute/repository/path'}).
 
 
 ------------------------------------------------------------------------------
- 4. Permissions — SAFE BY DEFAULT (important)
+ 3. Safe profiles and explicit write opt-in
 ------------------------------------------------------------------------------
-By default the engine launches subagents with a READ-ONLY tool allowlist
-(view, rg, glob, web_fetch, web_search). They can read and search but CANNOT
-write files or run arbitrary shell. This fits the core ultracode use case:
-review / research / audit fan-outs.
+ULTRACODE_PROFILE controls both tool availability and approval flags.
 
-    ULTRACODE_PERMS=read-only   (default)  read/search only; no writes or exec
-    ULTRACODE_PERMS=all                    FULL AUTONOMY — passes
-                                           --allow-all-tools to copilot, which
-                                           DISABLES its approval prompts.
+    local-read     default; view, rg, and glob only
+    research-read  local-read plus web_fetch
+    write          explicit write/command capability
 
-Only set ULTRACODE_PERMS=all when a workflow's subagents must edit files or run
-commands AND you trust the prompts. You are turning off the safety gate — do it
-deliberately:
+For Copilot, read profiles pass both --available-tools and matching
+--allow-tool flags. All noninteractive Copilot subagents also use
+--no-ask-user, --no-remote-export, and --disallow-temp-dir. Their automatic
+file boundary is therefore ULTRACODE_CWD (or the per-agent cwd), even when that
+explicit cwd itself is located under the system temporary directory.
 
-    ULTRACODE_PERMS=all ULTRACODE_CLI=copilot node /tmp/my-implement.mjs
+Use research-read only when the task genuinely needs external research.
+`web_search` is intentionally unavailable because Copilot URL grants do not
+constrain it. Copilot requires explicit URL/domain grants for web_fetch:
 
-Note: Copilot CLI requires non-prompting permissions to run non-interactively.
-The read-only default uses per-tool `--allow-tool` grants. If your version of
-Copilot refuses to run a prompt non-interactively without --allow-all-tools,
-switch to ULTRACODE_PERMS=all (understanding it disables the gate).
+    ULTRACODE_PROFILE=research-read \
+    ULTRACODE_ALLOWED_URLS='https://docs.example.com,api.example.com' ...
 
+Workflows may provide the same grants per agent:
 
-------------------------------------------------------------------------------
- 5. Configuration (environment variables)
-------------------------------------------------------------------------------
-    ULTRACODE_CLI            copilot | claude            default: copilot
-    ULTRACODE_CLI_BIN        override the binary path     default: the CLI name
-    ULTRACODE_MODEL          model for each subagent       default: CLI's default
-                             (e.g. ULTRACODE_MODEL=gpt-5.2)
-    ULTRACODE_CONCURRENCY    max concurrent subagents      default: 4
-    ULTRACODE_RETRIES        retries on failure/bad-JSON   default: 2
-    ULTRACODE_TIMEOUT_MS     per-subagent hard timeout     default: 600000
-    ULTRACODE_PERMS          read-only | all              default: read-only
-    ULTRACODE_COPILOT_TOOLS  read-only allowlist           default:
-                             view,rg,glob,web_fetch,web_search
-
-A typo in a numeric var (e.g. ULTRACODE_CONCURRENCY=auto) is ignored and the
-default is used — it will not hang. A subagent that exceeds ULTRACODE_TIMEOUT_MS
-is force-killed and recorded as null, so one stuck call cannot stall the run.
-
-
-------------------------------------------------------------------------------
- 6. Option B — model-driven loop (no Node required)
-------------------------------------------------------------------------------
-If Node is unavailable, the agent orchestrates by hand using Copilot's own
-`task` tool. Each phase is an explicit dispatch -> collect -> verify cycle:
-
-  1. Fan out a round: issue multiple `task` calls in a SINGLE response so they
-     run concurrently — one per finder / dimension / search-angle. Tell each
-     subagent: "Return ONLY a JSON object of this shape: {...}. No prose."
-  2. Collect: parse each subagent's JSON. Use list_agents / read_agent for
-     status or output.
-  3. Dedup and decide in your own reasoning.
-  4. Verify: fan out a second batch — one skeptic per surviving finding,
-     prompted to REFUTE it and return {isReal, confidence, reasoning}. Keep
-     only findings the verifiers confirm.
-  5. Loop across turns until done (loop-until-dry / completeness critic).
-
-This produces the same find -> verify -> synthesize behavior; the agent loop
-plays the role the engine script plays in Option A.
-
-
-------------------------------------------------------------------------------
- 7. Quick smoke test (optional)
-------------------------------------------------------------------------------
-Verify the engine can drive Copilot subagents on your machine. Write the test
-file INSIDE the skill dir so its './orchestrate.mjs' import resolves:
-
-    cd ~/.copilot/skills/ultracode
-    cat > uc-hello.mjs <<'EOF'
-    import { agent, parallel, run } from './orchestrate.mjs'
-    const S = { type:'object', properties:{ result:{} }, required:['result'] }
-    run(async () => {
-      const [a,b] = await parallel([
-        () => agent('Compute 2+2.',   { label:'add', schema:S }),
-        () => agent('Compute 10*10.', { label:'mul', schema:S }),
-      ])
-      return { add:a, mul:b, ok: !!(a && b) }
+    agent(prompt, {
+      profile: 'research-read',
+      allowedUrls: ['https://docs.example.com', 'api.example.com'],
     })
-    EOF
 
-    ULTRACODE_CLI=copilot node uc-hello.mjs
-    rm uc-hello.mjs            # clean up when done
+Grant only the destinations required for the task. The engine rejects a global
+wildcard; there is no all-URL compatibility fallback.
 
-Expect a JSON object on stdout with results 4 and 100 and "ok": true.
+The deterministic Claude CLI adapter supports local-read but rejects
+research-read because it cannot enforce these URL grants. Use Claude's native
+Workflow/runtime permission controls for research instead; the engine does not
+expose unrestricted WebFetch as a fallback.
+
+Write or command execution is never a compatibility fallback. Opt in in the
+workflow and mark the effect:
+
+    agent(prompt, {
+      profile: 'write',
+      effect: 'write',       // or 'exec'
+      retries: 0,
+    })
+
+The write profile disables approval prompts for the selected headless CLI.
+Use it only for trusted prompts and repositories. It also passes
+--disallow-temp-dir by default. If a write workflow genuinely needs Copilot's
+automatic temp-directory access, opt in explicitly:
+
+    agent(prompt, {profile: 'write', effect: 'write', allowTempDir: true})
+
+or set ULTRACODE_ALLOW_TEMP_DIR=true for that workflow.
+
+Custom project/global instruction inheritance is explicit:
+
+    ULTRACODE_INHERIT_INSTRUCTIONS=false   default; isolated subagents
+    ULTRACODE_INHERIT_INSTRUCTIONS=true    inherit runtime instructions
 
 
 ------------------------------------------------------------------------------
- 8. Troubleshooting
+ 4. Deadlines, cancellation, and retries
 ------------------------------------------------------------------------------
-  - "command not found: copilot"  -> Copilot CLI isn't on PATH. Install it /
-    open a shell where `copilot` resolves.
-  - It prompts for permission / refuses non-interactive  -> set
-    ULTRACODE_PERMS=all (disables the gate; see section 4).
-  - "no parseable JSON object found"  -> a subagent didn't honor the output
-    contract. The engine already retries (ULTRACODE_RETRIES); raise it, or
-    simplify the schema in your workflow's prompts.
-  - Subagent returns null  -> it failed all retries or hit the timeout. Check
-    the stderr lines (prefixed with "!") for the reason; raise
-    ULTRACODE_TIMEOUT_MS for slow tasks.
-  - Auth errors  -> run `copilot` interactively once and sign in.
+Each agent has one overall deadline covering queue wait and every attempt:
 
-Note: the Copilot adapter's flags are verified against `copilot --help`, but
-the engine was executed and proven end-to-end using the Claude adapter; your
-first real Copilot run is the final confirmation on your setup.
+    ULTRACODE_DEADLINE_MS=600000
+    agent(prompt, {deadlineMs: 120000})
+
+ULTRACODE_TIMEOUT_MS remains a deprecated deadline alias when
+ULTRACODE_DEADLINE_MS is absent.
+
+On deadline or parent SIGINT/SIGTERM, the engine terminates the subprocess
+process group and escalates to SIGKILL after a short grace period. Stdout and
+stderr capture are bounded.
+
+Read-only agents default to ULTRACODE_RETRIES=2. Retries occur only for:
+  - parse failures;
+  - schema failures; or
+  - classified transient process failures.
+
+Write/exec-capable agents default to zero retries. A write-capable retry occurs
+only when the workflow explicitly declares idempotency:
+
+    agent(prompt, {
+      profile: 'write',
+      effect: 'write',
+      idempotent: true,
+      retries: 1,
+    })
+
+
+------------------------------------------------------------------------------
+ 5. Structured envelopes and schema subset
+------------------------------------------------------------------------------
+agent() always returns one of:
+
+    {ok: true, value, attempts, meta?}
+
+    {
+      ok: false,
+      error: {
+        kind,
+        message,
+        retryable,
+        incompleteCount,
+        diagnostics?,
+      },
+      attempts,
+      meta?,
+    }
+
+There is no null-as-success behavior. Bounded diagnostics describe failed
+attempts. pipeline() stops an item on a failed envelope and records
+pipelineIndex and failedStage, so required stage failures remain visible.
+
+run() prints one final envelope to stdout; progress prints to stderr.
+
+The schema validator intentionally supports only this bounded recursive subset:
+
+    type, required, properties, items, enum, minItems
+
+Unsupported keywords are rejected before launching a CLI. This is not a claim
+of full JSON Schema support.
+
+
+------------------------------------------------------------------------------
+ 6. Engine API
+------------------------------------------------------------------------------
+The ES module exports:
+
+    ENGINE_CAPABILITIES
+    agent(prompt, options)
+    map(items, mapper)
+    parallel(thunks)
+    pipeline(items, ...stages)
+    synthesize(inputs, promptOrBuilder, options)
+    phase(title)
+    log(message)
+    run(main)
+    resolveTarget(target, cwd)
+    resolveEngineSpecifier(location)
+    validateSchemaDefinition(schema)
+    validateStructuredValue(value, schema)
+    buildAdapterArguments(prompt, configuration)
+    deterministicSort(values, keys)
+
+ENGINE_CAPABILITIES.copilotReadDisallowTempDir is true when the engine enforces
+--disallow-temp-dir for every Copilot read profile. Composed workflows may
+require this capability and fail preflight against older engines.
+
+The shipped template demonstrates local-read defaults, absolute targets,
+structured envelopes, configurable verifier voting, a bounded completeness
+critic loop, deterministic ordering, and explicit failure metadata.
+
+
+------------------------------------------------------------------------------
+ 7. Configuration
+------------------------------------------------------------------------------
+    ULTRACODE_CLI                  copilot | claude (default: copilot)
+    ULTRACODE_CLI_BIN              executable override
+    ULTRACODE_CWD                  subagent working directory
+    ULTRACODE_PROFILE              local-read | research-read | write
+    ULTRACODE_ALLOWED_URLS         comma-separated Copilot research URL/domain grants
+    ULTRACODE_ALLOW_TEMP_DIR       true only for write-profile temp access
+    ULTRACODE_INHERIT_INSTRUCTIONS true | false (default: false)
+    ULTRACODE_MODEL                model override
+    ULTRACODE_CONCURRENCY          max active subprocesses (default: 4)
+    ULTRACODE_RETRIES              read-agent retry count (default: 2)
+    ULTRACODE_DEADLINE_MS          overall per-agent deadline (default: 600000)
+    ULTRACODE_TIMEOUT_MS           deprecated deadline alias
+
+Template-only controls:
+
+    ULTRACODE_ENGINE               absolute orchestrate.mjs path or file URL
+    ULTRACODE_THOROUGH             false for lightweight mode
+    ULTRACODE_VERIFIER_VOTES       1..5
+    ULTRACODE_CRITIC_ROUNDS        0..3
+
+
+------------------------------------------------------------------------------
+ 8. Option B: runtime-managed orchestration
+------------------------------------------------------------------------------
+When Node or a supported CLI adapter is unavailable, use the runtime's native
+subagent tool. Keep dispatches flat and drive explicit
+dispatch -> collect -> deduplicate -> verify -> synthesize rounds. Require
+subagents to return JSON, track failures, and retain the same safe-profile and
+cwd intent wherever the runtime supports those controls.
 ==============================================================================

@@ -45,18 +45,60 @@ You have a `task` tool (`agent_type: general-purpose | explore | research | code
 
 #### Option A — deterministic JS engine (preferred; closest parity with `Workflow`)
 
-This skill ships a zero-dependency Node engine, **`orchestrate.mjs`**, that gives you `agent()` / `parallel()` / `pipeline()` / `phase()` / `log()` / `run()` — a concurrency cap, retries, and schema-validated structured output — by shelling out to `copilot -p` once per subagent. It is **safe by default**: subagents get a read-only tool allowlist and cannot write files or run shell unless you opt in.
+This skill ships a zero-dependency Node engine, **`orchestrate.mjs`**, that gives you
+`agent()` / `map()` / `parallel()` / `pipeline()` / `synthesize()` / `run()`. It
+provides concurrency control, bounded recursive schema validation, one overall
+deadline per agent, side-effect-aware retries, process-tree cancellation, and
+structured result envelopes.
 
-1. **Copy the template** `workflow.template.mjs` (next to `orchestrate.mjs`) to a working file, edit the CONFIG block + prompts for your task. The find → adversarially-verify pipeline is already wired.
-2. **Run it** with `bash`:
+1. **Create a session workspace outside the installed skill directory.** Copy
+   `workflow.template.mjs` there and edit its CONFIG block and prompts. The template
+   resolves the installed engine through `ULTRACODE_ENGINE`, so generated run files
+   never need to live inside a copied or symlinked skill.
+2. **Run it from the repository being inspected**, setting an explicit subagent cwd:
    ```bash
-   ULTRACODE_CLI=copilot node my-workflow.mjs            # read-only subagents (default)
+   ULTRACODE_ENGINE="$HOME/.copilot/skills/ultracode/orchestrate.mjs" \
+   ULTRACODE_CWD="$PWD" ULTRACODE_CLI=copilot \
+   node .copilot-session/my-workflow.mjs src/example.mjs
    ```
-   For workflows whose subagents must edit files or run commands, opt in explicitly — this disables Copilot's approval gates:
+   The default `local-read` profile exposes only `view`, `rg`, and `glob`.
+   Copilot read profiles also pass `--disallow-temp-dir`, so their automatic
+   file boundary is the explicit cwd even when that cwd itself is under the
+   system temporary directory.
+   The engine advertises this contract through
+   `ENGINE_CAPABILITIES.copilotReadDisallowTempDir=true`, allowing composed
+   workflows to fail closed against older engines.
+   Research workflows must opt in to `web_fetch`. `web_search` is intentionally
+   unavailable because URL grants do not constrain it. Copilot also requires an
+   explicit URL/domain allowlist:
    ```bash
-   ULTRACODE_CLI=copilot ULTRACODE_PERMS=all node my-workflow.mjs
+   ULTRACODE_PROFILE=research-read \
+   ULTRACODE_ALLOWED_URLS='https://docs.example.com,api.example.com' ...
    ```
-3. **Read the JSON** the engine prints to stdout (progress goes to stderr); decide the next phase and run the next workflow. Knobs: `ULTRACODE_MODEL`, `ULTRACODE_CONCURRENCY`, `ULTRACODE_RETRIES`, `ULTRACODE_TIMEOUT_MS` (see the header of `orchestrate.mjs`). The same engine drives Claude Code subagents with `ULTRACODE_CLI=claude`.
+   A workflow may instead pass
+   `agent(prompt, {profile: 'research-read', allowedUrls: ['https://docs.example.com']})`.
+   Grant only required destinations; there is no global wildcard or all-URL
+   fallback. Deterministic `ULTRACODE_CLI=claude` research-read fails closed
+   because this engine cannot enforce URL grants for Claude; use Claude's native
+   Workflow/runtime permission controls for research. Claude local-read remains
+   supported.
+   Editing or command execution requires the explicit `write` profile and an
+   `effect: 'write'` or `effect: 'exec'` agent option. Write-capable agents default
+   to zero retries; a retry requires both `idempotent: true` and an explicit retry
+   count. Write profiles also disallow automatic temp-directory access by default;
+   opt in only when required with `allowTempDir: true` or
+   `ULTRACODE_ALLOW_TEMP_DIR=true`.
+3. **Read the final envelope** from stdout. `agent()` and `run()` return
+   `{ok:true,value,attempts,meta?}` or
+   `{ok:false,error:{kind,message,...},attempts,meta?}`. Required stage failures
+   remain visible instead of becoming `null`. Progress and bounded diagnostics go
+   to stderr or envelope metadata.
+
+Important knobs: `ULTRACODE_CWD`, `ULTRACODE_PROFILE`,
+`ULTRACODE_DEADLINE_MS`, `ULTRACODE_CONCURRENCY`, `ULTRACODE_RETRIES`,
+`ULTRACODE_MODEL`, and `ULTRACODE_INHERIT_INSTRUCTIONS`. Instruction inheritance
+defaults off and must be deliberately enabled. The same engine supports
+`ULTRACODE_CLI=claude` for cross-runtime workflows.
 
 #### Option B — model-driven loop (no Node; always works)
 

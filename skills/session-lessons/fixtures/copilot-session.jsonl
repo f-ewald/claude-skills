@@ -1,0 +1,6 @@
+{"type":"system.message","timestamp":"2026-07-15T11:00:00Z","data":{"content":"Local session 123e4567-e89b-12d3-a456-426614174000"}}
+{"type":"user.message","timestamp":"2026-07-15T11:01:00Z","data":{"content":"Stop. Use Bearer abc.def.ghi only as a redaction test."}}
+{"type":"assistant.message","timestamp":"2026-07-15T11:02:00Z","data":{"content":"You're right; I should inspect the target first.","reasoningText":"PRIVATE_COPILOT_REASONING"}}
+{"type":"tool.execution_start","timestamp":"2026-07-15T11:03:00Z","data":{"toolCallId":"call-17","toolName":"view","arguments":{"path":"C:\\Users\\bob\\work\\COPILOT.md","options":{"credential":"fixture-value"}}}}
+{"type":"tool.execution_complete","timestamp":"2026-07-15T11:03:01Z","data":{"toolCallId":"call-17","success":false,"result":{"success":false,"content":"api_key=abcdef123456 failed"}}}
+{"type":"abort","timestamp":"2026-07-15T11:04:00Z","data":{"reason":"user_initiated"}}

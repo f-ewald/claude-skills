@@ -4,15 +4,20 @@ A personal collection of **Agent Skills** (the open `SKILL.md` standard) plus
 status-line scripts and shell helpers, shared between **Claude Code** and the
 **GitHub Copilot CLI**. There is no application to build: the "product" is the
 markdown skills and bash scripts themselves, consumed in place via symlinks into
-`~/.claude/` (see `README.md`).
+the harness-specific personal directories (see `README.md`).
 
 ## No build / test / lint tooling
 
-There is no package manager, build step, or test suite (no `package.json`,
-`Makefile`, etc.). Validate changes manually:
+There is no package manager or build step. Validate skill packages with the
+zero-dependency Node tools:
 
-- **Skill files** — confirm the YAML frontmatter parses and the folder name
-  matches the `name:` field.
+```bash
+node scripts/validate-skills.mjs
+node --test tests/*.test.mjs
+```
+
+- **Skill files** — the validator checks the repository's bounded frontmatter
+  subset, folder/name parity, references, inventory, and generated artifacts.
 - **Status-line scripts** — each reads a JSON status blob on stdin (`input=$(cat)`)
   and prints one line, parsed with `jq` (required dependency). Smoke-test by
   piping JSON, e.g. `echo '<status-json>' | ./statusline_copilot.sh`. The exact
@@ -24,9 +29,10 @@ There is no package manager, build step, or test suite (no `package.json`,
 - `skills/<name>/SKILL.md` — one folder per skill. Skills are **prose workflow
   instructions, not code**: numbered phases/steps describing how the agent should
   behave (interview the user, present a summary table first, confirm findings
-  one-by-one, post nothing until confirmed). Current skills: `adversarial-review`,
-  `design-doc`, `grill-me`, `review`, and `ultracode` (which additionally ships a
-  zero-dependency Node orchestration engine, `orchestrate.mjs`, alongside its `SKILL.md`).
+  one-by-one, post nothing until confirmed). Released skills:
+  `adversarial-review`, `deeper-research`, `design-doc`, `grill-me`, `review`,
+  `session-lessons`, `ultracode`, and `worklog`. Some packages also contain
+  zero-dependency Node adapters or orchestration code.
 - **Cross-harness by design** — the same `SKILL.md` standard and discovery paths
   work in both Claude Code (`~/.claude/skills`) and Copilot (`~/.copilot/skills`,
   `.github/skills`). `docs/using-skills-in-copilot.md` is the reference for the
@@ -43,8 +49,6 @@ There is no package manager, build step, or test suite (no `package.json`,
   `~/.copilot/copilot-instructions.md`) — the same global rules, kept in sync,
   and likewise not repo-local config. Neither is *this* file
   (`.github/copilot-instructions.md`), which is the repo-specific guidance.
-- `flask-to-quart-migration.md` is a sample output of the `design-doc` skill, not
-  project source.
 
 ## Conventions when adding or changing a skill
 
@@ -52,11 +56,15 @@ There is no package manager, build step, or test suite (no `package.json`,
 - Frontmatter requires `name` and `description`; the `description` must state both
   what the skill does **and when to use it** ("Use when …") — that text is how
   both Copilot and Claude decide relevance.
-- Optional frontmatter used here: `license`, `author`, `compatibility`, and
-  `allowed-tools` (e.g. `Bash(gh:*)` to pre-authorize a command).
+- Optional frontmatter used here: `license`, `metadata.author`,
+  `compatibility`, and `allowed-tools` (e.g. `Bash(gh:*)` to pre-authorize a
+  command in harnesses that honor it).
 - Bundle supporting files in a subfolder (`templates/`, `scripts/`) and reference
   them by **relative path** from the `SKILL.md`.
-- `docs/using-skills-in-copilot.md` hardcodes the list of skills Copilot sees —
-  update that list when you add or rename a skill.
+- Every released skill has an `evals.json` in the repository's version-1
+  `skill`/`cases` schema; executable helpers also need offline `node:test`
+  coverage under `tests/`.
+- The machine-checkable catalog between `skill-catalog` markers in `README.md`
+  must be updated when a skill is added or renamed.
 - `README.md` documents installation and both status lines — update it when you
   change that behavior.

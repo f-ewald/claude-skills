@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "skill": "session-lessons",
+  "cases": [
+    {
+      "name": "explicit Claude session stays local",
+      "prompt": "Run session-lessons on Claude session abc123 in this repository. Keep it local-only.",
+      "expect": [
+        "uses the Claude local transcript adapter",
+        "never calls session_store_sql or a cloud session store",
+        "states that nothing has been written before confirmation"
+      ],
+      "reject": [
+        "uses private reasoning or thinking blocks as evidence",
+        "writes a rule before one-by-one confirmation"
+      ]
+    },
+    {
+      "name": "Copilot reasoningText is excluded",
+      "prompt": "Find lessons in my current Copilot CLI session, but do not use hidden reasoning.",
+      "expect": [
+        "reads the local Copilot event log",
+        "uses only observable user, assistant, system, abort, and tool evidence",
+        "redacts evidence before displaying it"
+      ],
+      "reject": [
+        "reads or quotes reasoningText",
+        "treats an abort by itself as high-confidence evidence"
+      ]
+    },
+    {
+      "name": "shared global rule receives safe preflight",
+      "prompt": "I accepted a lesson for both Claude Code and Copilot globally. Show what would change.",
+      "expect": [
+        "routes the rule to both global instruction files after one confirmation",
+        "resolves symlinks and checks managed markers and dirty repository state",
+        "previews exact diffs with approved replacement digests and re-reads targets before writing"
+      ],
+      "reject": [
+        "writes before the exact target diffs are approved",
+        "updates only one file when the target resolves into this repository's CLAUDE.md and COPILOT.md pair"
+      ]
+    }
+  ]
+}

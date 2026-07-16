@@ -1,8 +1,9 @@
 ---
 name: design-doc
-description: Create a software design document by grilling the user, researching alternatives and best practices, then producing a structured markdown doc (or Google Doc). Use when the user wants to write a design doc / RFC / software design document / technical design.
+description: Create a reviewed software design document by composing the grill-me interview and deeper-research evidence workflows, obtaining recommendation sign-off, and emitting Markdown with an optional Google Docs conversion. Use when the user wants an RFC, software design document, technical design, or a durable design artifact; use grill-me alone for a chat-only stress test.
 license: MIT
-author: Freddy Ewald
+metadata:
+  author: Freddy Ewald
 ---
 
 # Software Design Document
@@ -11,13 +12,21 @@ Produce a reviewed software design document the way a senior engineer would: int
 
 The output document has these sections, in this order: Title, Abstract, Reviewers table, Problem Statement, Goals & Non-Goals, Alternatives Considered, Recommendation / Conclusion, Risks & Open Questions, Execution Plan, References. The full template is in [templates/design-doc-template.md](templates/design-doc-template.md) — read it before Phase 5.
 
-## Phase 0 — Output target
+## Phase 0 — Output target and identity
 
-Default to a **markdown file**. Switch to a **Google Doc** only if the user explicitly asks for one (e.g. "as a Google doc", "write it to Google docs"). Note the choice and carry it to Phase 6. Do not ask about output format here unless it is genuinely ambiguous.
+Default to a **Markdown file**. Switch to a **Google Doc** only if the user
+explicitly requests one. Collect or confirm the document **title** and
+**author** before assembly; never infer authorship from the active account.
+Note the desired output and carry it to Phase 6. Do not block the design work
+merely because an optional Google Docs capability is unavailable.
 
 ## Phase 1 — Grill the user
 
-Interview the user relentlessly about the design until you reach a shared understanding. Walk down each branch of the decision tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer so the user can react rather than start from scratch. **If a question can be answered by exploring the codebase, explore the codebase instead of asking.**
+Invoke the **`grill-me`** skill for the interview. If the active harness cannot
+nested-invoke another skill, follow `grill-me`'s documented contract directly:
+one focused question at a time, recommended defaults with rationale, codebase
+grounding, a live in-chat decision ledger, contradiction handling, and final
+reconciliation.
 
 Drive the interview to extract exactly the inputs the document needs:
 
@@ -28,29 +37,52 @@ Drive the interview to extract exactly the inputs the document needs:
 - **Success criteria** — how we will know the design worked.
 - **Candidate alternatives** — any approaches the user already has in mind (you will add more in research).
 
-Keep going until the problem is crisp. Use `AskUserQuestion` for discrete choices; use plain prose for open-ended probing. Don't move on while the problem statement is still vague.
+Keep going until the problem is crisp. Use the harness's user-question
+capability for discrete choices and ordinary conversation for open-ended
+probing. Do not move on while the problem statement is still vague.
 
-**Never fill gaps with assumptions.** If any part of the problem, scope, or a requirement is unclear or missing, stop and ask the user to clarify before continuing — do not guess, do not invent defaults, and do not proceed to later phases on an ambiguous problem. It is always better to ask one more question than to design against an assumed problem. Only state an assumption when the user is genuinely unavailable to answer, and when you do, flag it explicitly as an assumption to confirm.
+**Never silently fill gaps with assumptions.** If any part of the problem,
+scope, or a requirement is unclear or missing, stop and ask the user to clarify
+before continuing. When the user explicitly delegates a choice with wording
+such as "use your judgment," apply the recommended default and record it in the
+ledger as an assumption. If the user is unavailable, flag any necessary
+assumption for confirmation rather than presenting it as settled fact.
 
 ## Phase 2 — Structured follow-ups
 
-Once the problem is clear, run a focused `AskUserQuestion` round to lock down the remaining metadata the document needs:
+Once the problem is clear, ask focused follow-up questions to lock down the
+remaining metadata:
 
 - The concrete **set of alternatives** to evaluate (combine the user's with any obvious industry options).
-- **Reviewers** — names and teams to pre-fill in the reviewer table.
-- **Execution-plan horizon** — rough timeframe / how granular the task breakdown should be.
+- **Reviewers** — zero or more names and teams. Rows are repeatable and removable.
+- **Planning unit** — points, days, weeks, milestones, or `TBD`; estimates are optional.
 - **Audience** — who reads this doc (peers, staff+, cross-org), which sets the depth.
+- **Title and author** — confirm both explicitly.
 - Confirm the **output target** from Phase 0 if it was ambiguous.
 
 ## Phase 3 — Research alternatives & best practices
 
-Delegate the heavy lifting to the **`deep-research`** skill. Synthesize a research brief from Phases 1–2 covering: the problem statement, each candidate alternative, and the best-practice angle ("how do mature teams solve X"), and instruct deep-research to treat **each alternative (plus best-practices) as a research angle**. It fans out one researcher per angle, adversarially verifies the load-bearing claims, and returns per-angle findings with cited sources — using whatever orchestration is available (the `Workflow` tool, the Copilot engine, or a sequential fallback).
+Invoke **`deeper-research` in embedded evidence-only mode** only after the
+interview contract is complete and the alternatives are stable. Embedded mode
+returns the assumptions, sourced evidence states, failures, limitations,
+synthesis, and red-team status to this workflow without writing its own report.
+If nested invocation is unavailable, follow that embedded evidence contract
+directly. Build a research brief from Phases 1-2 covering the problem, each
+candidate alternative, and how mature teams solve the same class of problem.
 
-The output must be: per-alternative evidence (pros, cons, adoption) plus verified key claims, all with source URLs.
+The output must preserve, per alternative:
 
-Instruct the research to **also consult internal sources** when internal MCP tools are connected - list MCP tools first - to surface internal prior art and existing solutions before recommending an external one. If those tools are not connected, proceed **web-only** and do not block on them.
+- evidence for pros, cons, adoption, operational fit, and risks;
+- source URLs and checked scope;
+- load-bearing claim classifications;
+- separate **verified**, **refuted**, and **unconfirmed** results;
+- confidence and material research limitations.
 
-Keep every cited source — they become the References section. Each alternative should come out of this phase with evidence for its pros, cons, and real-world adoption.
+Use only already configured, approved internal read-only sources. Public web
+research is appropriate only for non-sensitive material; never send internal
+content to public web tools. If a source class is unavailable, continue with
+the approved sources and retain that limitation. Keep every cited source for
+the References section.
 
 ## Phase 4 — Sign-off gate
 
@@ -61,20 +93,37 @@ Before writing anything, present a **summary table of the alternatives** plus yo
 | 1 | … | … | … |
 | 2 | … | … | … |
 
-State clearly that nothing has been written yet, then give your recommendation and reasoning. Let the user **accept**, **edit**, or **redirect**. Iterate until they approve. Do not generate the document until the recommendation is signed off.
+Add an evidence-status column or concise notes so unconfirmed claims are not
+presented as facts. State clearly that nothing has been written yet, then give
+your recommendation, reasoning, residual uncertainty, and strongest
+counterargument. Let the user **accept**, **edit**, or **redirect**. Iterate
+until they approve. Do not generate the document until the recommendation is
+signed off.
 
 ## Phase 5 — Assemble the document
 
 Read [templates/design-doc-template.md](templates/design-doc-template.md) and fill every section from the work above:
 
-- Pre-fill the **Reviewers** table rows with the names/teams from Phase 2 (leave Date and Comment blank for reviewers).
-- **Alternatives Considered** — one subsection per alternative (summary / pros / cons) plus the comparison table; ground claims in the Phase 3 research.
+- Pre-fill exactly the confirmed **Reviewers** rows; omit placeholder rows when there are none.
+- **Alternatives Considered** — one repeatable subsection per alternative plus a dynamic comparison table; remove unused rows and criteria.
 - **Recommendation** — the signed-off choice and why it beats the alternatives.
-- **Execution Plan** — a `Task | Estimate (weeks)` table with a total row, at the granularity agreed in Phase 2.
+- **Risks & Open Questions** — preserve refuted and unconfirmed research distinctions rather than flattening uncertainty.
+- **Execution Plan** — repeatable task rows using the user's planning unit, or `TBD`; omit a numeric total when estimates are incomparable or absent.
 - **References** — numbered, every source URL from Phase 3.
 - Write the **Abstract last** so it accurately summarizes the finished document.
 
 ## Phase 6 — Emit
 
-- **Markdown (default):** derive a `kebab-case` slug from the title, propose `./<slug>.md`, confirm the filename with the user, then `Write` the document.
-- **Google Doc:** delegate to the **`write-google-docs`** skill — pass the fully assembled **markdown** to `create_google_docs_document` (its tools convert markdown to native Google Docs formatting). Return the document URL to the user.
+- **Markdown (default):** derive a `kebab-case` slug from the title and propose
+  `./<slug>.md`. Check whether the path exists. Show the target and require
+  explicit confirmation before replacing any existing file, then use the
+  harness's file-writing capability.
+- **Google Doc:** first confirm a local path and write the completed Markdown
+  artifact there. If an approved Google Docs capability is available, delegate
+  conversion from that durable source and return both locations. If none is
+  available, keep the local Markdown artifact and state that the optional
+  conversion could not be performed; do not fail or discard the document.
+
+After emitting, report the artifact location and any remaining unconfirmed
+research or open decisions. Do not start implementation unless separately
+requested.

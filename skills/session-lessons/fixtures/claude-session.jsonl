@@ -1,0 +1,4 @@
+{"type":"system","timestamp":"2026-07-15T10:00:00Z","message":{"content":"Repository is /Users/alice/work/demo."}}
+{"type":"user","timestamp":"2026-07-15T10:01:00Z","message":{"role":"user","content":"Do not print token=super-secret-value or alice@example.com."}}
+{"type":"assistant","timestamp":"2026-07-15T10:02:00Z","message":{"role":"assistant","content":[{"type":"thinking","thinking":"PRIVATE_REASONING_MUST_NOT_APPEAR"},{"type":"text","text":"I should have checked the existing rule first."},{"type":"tool_use","name":"Read","input":{"file_path":"/Users/alice/work/demo/CLAUDE.md","client_secret":"fixture-client-value"},"id":"tool-use-private-42"}]}}
+{"type":"user","timestamp":"2026-07-15T10:03:00Z","message":{"role":"user","content":[{"type":"tool_result","is_error":true,"content":"file not found","tool_use_id":"tool-use-private-42"}]}}

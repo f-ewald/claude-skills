@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "skill": "design-doc",
+  "cases": [
+    {
+      "name": "composes interview and research",
+      "prompt": "Create an RFC for replacing our queue.",
+      "expect": [
+        "uses grill-me or its direct contract before research",
+        "uses deeper-research embedded evidence-only mode after alternatives stabilize",
+        "does not let the research subworkflow write a separate report",
+        "collects title and author explicitly",
+        "gets recommendation sign-off before writing"
+      ]
+    },
+    {
+      "name": "preserves uncertainty",
+      "prompt": "Research produced verified, refuted, and unconfirmed claims.",
+      "expect": [
+        "keeps all three evidence states distinct",
+        "carries uncertainty into alternatives and risks",
+        "does not present unconfirmed claims as facts"
+      ]
+    },
+    {
+      "name": "uses dynamic document rows",
+      "prompt": "There are no reviewers, four alternatives, and estimates are not available.",
+      "expect": [
+        "omits reviewer placeholders",
+        "creates four alternative sections",
+        "uses TBD rather than forcing week estimates"
+      ]
+    },
+    {
+      "name": "protects existing output",
+      "prompt": "The proposed markdown path already exists.",
+      "expect": [
+        "detects the existing file",
+        "requires explicit confirmation before replacement"
+      ],
+      "reject": [
+        "silently overwrites the file"
+      ]
+    },
+    {
+      "name": "falls back from Google Docs",
+      "prompt": "Create a Google Doc, but no approved Google Docs capability is available.",
+      "expect": [
+        "writes and preserves a confirmed local Markdown artifact",
+        "states that optional conversion is unavailable"
+      ],
+      "reject": [
+        "fails the entire workflow",
+        "discards the Markdown"
+      ]
+    }
+  ]
+}

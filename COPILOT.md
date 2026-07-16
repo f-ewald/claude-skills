@@ -22,7 +22,7 @@ Copilot reads personal (global) instructions from (see README.md):
 - Use best practices for specific languages. Per-language standards and required libraries live in `programming-standards/<language>.md` (e.g. `programming-standards/python.md`) and take precedence over general guidance (like PEP 8) where they conflict.
 - Avoid using global variables; instead, pass necessary data through method parameters or use class-level variables when appropriate.
 - Avoid big refactors unless specifically asked to do so. Focus on making minimal necessary changes to achieve the migration goals while maintaining code stability.
-- When refactoring or making major changes, update the relevant always-on instructions file (CLAUDE.md and this file) to reflect the new structure and rules.
+- When refactoring or making major changes, update the relevant always-on instructions file (`CLAUDE.md` and `COPILOT.md`) to reflect the new structure and rules.
 - When solving an issue and you encounter debug statements, explicitly ask the user if it is ok to remove them.
 - These global-rules files should contain less than 200 lines in the ideal case.
 
