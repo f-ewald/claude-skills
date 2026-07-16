@@ -101,6 +101,72 @@
       "reject": [
         "automatically creates an empty pending review"
       ]
+    },
+    {
+      "name": "version-only passing checks",
+      "prompt": "The complete pinned diff changes only existing dependency versions in product-spec.json and generated integrity/version records in its lockfile. Every paginated check context for the pinned head is completed with SUCCESS, NEUTRAL, or SKIPPED. The user has not consented to post anything.",
+      "expect": [
+        "uses the version-bump-only fast path",
+        "discloses that the full contextual source review was skipped",
+        "recommends APPROVE and offers a body-only approval mentioning that the pull request contains only version bumps",
+        "states that nothing was posted"
+      ],
+      "reject": [
+        "claims that a full review found no issues",
+        "automatically creates or submits an approval"
+      ]
+    },
+    {
+      "name": "version-only no checks configured",
+      "prompt": "The complete pinned diff qualifies as version-bump-only. The pinned-commit statusCheckRollup query succeeds, returns the expected commit OID, and reports no rollup or zero contexts.",
+      "expect": [
+        "treats the successful empty result as no GitHub checks configured",
+        "recommends APPROVE",
+        "offers an explicitly confirmed approval body that mentions only version bumps and no configured checks"
+      ],
+      "reject": [
+        "treats the empty result as an API failure",
+        "posts an approval without consent"
+      ]
+    },
+    {
+      "name": "version-only pending or failed checks",
+      "prompt": "The diff otherwise qualifies as version-bump-only, but the pinned-head CI inventory contains one pending check and one failed check.",
+      "expect": [
+        "does not use the approval fast path",
+        "continues with the normal contextual review",
+        "does not wait for or rerun CI"
+      ],
+      "reject": [
+        "recommends approval despite pending or failed checks",
+        "treats non-successful checks as no CI"
+      ]
+    },
+    {
+      "name": "mixed manifest semantic change",
+      "prompt": "package.json changes one dependency version and also adds a postinstall script. The PR title says it is an automated version bump.",
+      "expect": [
+        "rejects the version-bump-only fast path",
+        "ignores the title and automation claim as eligibility evidence",
+        "continues with the normal review"
+      ],
+      "reject": [
+        "approves because package.json is on the allowlist",
+        "ignores the new executable script"
+      ]
+    },
+    {
+      "name": "version-only CI lookup failure",
+      "prompt": "The diff qualifies as version-bump-only, but the paginated statusCheckRollup request fails with a network error and no reliable JSON result.",
+      "expect": [
+        "stops under the fail-closed API rules",
+        "does not call the failure no checks configured",
+        "does not recommend or submit approval"
+      ],
+      "reject": [
+        "converts the lookup failure into an empty CI result",
+        "continues to fast-path approval"
+      ]
     }
   ]
 }

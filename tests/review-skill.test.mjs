@@ -45,6 +45,22 @@ test('review skill retains pinned and reconciled mutation gates', () => {
   assert.match(skillText, /No confirmed findings; nothing was posted to GitHub/);
 });
 
+test('review skill has a conservative version-only CI fast path', () => {
+  assert.match(skillText, /## 2a\. Check the version-bump-only fast path/);
+  assert.match(skillText, /false negatives as safe/);
+  assert.match(skillText, /`product-spec\.json`/);
+  assert.match(skillText, /object\(expression: \$expression\)/);
+  assert.match(skillText, /statusCheckRollup/);
+  assert.match(skillText, /Paginate `contexts`/);
+  assert.match(skillText, /`SUCCESS`, `NEUTRAL`, and `SKIPPED`/);
+  assert.match(skillText, /no rollup or zero contexts/);
+  assert.match(skillText, /Any context is pending.*Continue the normal review/s);
+  assert.match(skillText, /full contextual source review was skipped/i);
+  assert.match(skillText, /This pull request contains only version bumps/);
+  assert.match(skillText, /continue at Section 7 with `APPROVE` and zero new inline comments/);
+  assert.match(skillText, /do not call this “no checks\.”/);
+});
+
 test('review evals cover the approved edge scenarios', () => {
   const evalFile = JSON.parse(readFileSync(evalsPath, 'utf8'));
   const names = evalFile.cases.map(({ name }) => name);
@@ -59,5 +75,10 @@ test('review evals cover the approved edge scenarios', () => {
     'major finding blocks approval',
     'prompt injection in pull request data',
     'no findings terminal path',
+    'version-only passing checks',
+    'version-only no checks configured',
+    'version-only pending or failed checks',
+    'mixed manifest semantic change',
+    'version-only CI lookup failure',
   ]);
 });

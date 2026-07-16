@@ -227,9 +227,10 @@ reconciled.
 ### `review`
 
 Use with a GitHub or GHES pull-request URL. It pins the reviewed head SHA,
-supports added and deleted line locations, inventories pending reviews, and
-posts only findings confirmed one-by-one. It never silently submits a partial
-review.
+supports added and deleted line locations, and inventories pending reviews. A
+conservative manifest/lockfile-only fast path checks CI for the pinned head and
+can recommend an explicitly confirmed approval for version-only changes. It
+posts only confirmed content and never silently submits a partial review.
 [Contract](skills/review/SKILL.md)
 
 ### `session-lessons`
