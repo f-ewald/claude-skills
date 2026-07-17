@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "skill": "review",
+  "skill": "pr-review",
   "cases": [
     {
       "name": "head changes before posting",

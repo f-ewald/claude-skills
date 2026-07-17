@@ -23,6 +23,9 @@ node --test tests/*.test.mjs
   piping JSON, e.g. `echo '<status-json>' | ./statusline_copilot.sh`. The exact
   JSON shape each script expects is documented in its header comment, and the two
   scripts expect **different** schemas (see below).
+- **Changelog** — `CHANGELOG.md` is generated from first-parent commit history by
+  `node scripts/update-changelog.mjs`; use `--check` to verify it. Do not edit the
+  generated file manually.
 
 ## Architecture / big picture
 
@@ -30,7 +33,7 @@ node --test tests/*.test.mjs
   instructions, not code**: numbered phases/steps describing how the agent should
   behave (interview the user, present a summary table first, confirm findings
   one-by-one, post nothing until confirmed). Released skills:
-  `adversarial-review`, `deeper-research`, `design-doc`, `grill-me`, `review`,
+  `adversarial-review`, `deeper-research`, `design-doc`, `grill-me`, `pr-review`,
   `session-lessons`, `ultracode`, and `worklog`. Some packages also contain
   zero-dependency Node adapters or orchestration code.
 - **Cross-harness by design** — the same `SKILL.md` standard and discovery paths

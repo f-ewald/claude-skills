@@ -1,5 +1,5 @@
 ---
-name: review
+name: pr-review
 description: Review a GitHub.com or GitHub Enterprise Server pull request at a pinned head commit, classify findings, confirm them one-by-one, and safely publish exactly one COMMENT, APPROVE, or REQUEST_CHANGES review. Use when given a GitHub pull request URL or normalized repository/PR reference to review.
 license: MIT
 compatibility: Requires a recent gh CLI authenticated to the target GitHub.com or GHES host and REST/GraphQL pull-request review APIs. Older GHES releases may not support multiline review threads.

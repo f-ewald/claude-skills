@@ -57,7 +57,7 @@ against the on-disk packages by `scripts/validate-skills.mjs`.
    ls -l ~/.claude/skills
    ```
 
-   You should see `review/` and `grill-me/` (each containing a `SKILL.md`).
+   You should see `pr-review/` and `grill-me/` (each containing a `SKILL.md`).
 
 2. **Open Copilot Chat in Agent mode.** Open the **Chat** view, then switch the mode selector to
    **Agent**. (Skills are loaded by the agent, not by inline completions.)
@@ -69,7 +69,7 @@ against the on-disk packages by `scripts/validate-skills.mjs`.
 
    - **Automatically** — just describe a task that matches the skill's `description`. For example,
      paste a PR URL: *"Review this PR: https://github.com/owner/repo/pull/123"*. Copilot matches
-     it to the `review` skill and loads the full `SKILL.md` on demand.
+     it to the `pr-review` skill and loads the full `SKILL.md` on demand.
    - **Explicitly** — type `/` in the chat input and pick the skill by name.
 
    The custom `deeper-research` name is intentional: it does not shadow Claude
@@ -102,7 +102,7 @@ against the on-disk packages by `scripts/validate-skills.mjs`.
 
 ## Verifying it works
 
-- In VS Code, ask: *"Review this PR: <url>"* and confirm Copilot follows the `review` steps —
+- In VS Code, ask: *"Review this PR: <url>"* and confirm Copilot follows the `pr-review` steps —
   it should present a **summary table first**, walk findings **one-by-one**, and **post nothing**
   to GitHub until you confirm each one.
 - Ask: *"Grill me on this plan"* and confirm the `grill-me` skill activates.

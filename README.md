@@ -5,6 +5,24 @@
 * `COPILOT.md` contains the equivalent global rules for GitHub Copilot CLI.
 * `programming-standards/` contains per-language coding standards and required libraries (e.g. `python.md`).
 
+## Changelog
+
+[`CHANGELOG.md`](CHANGELOG.md) is generated from the repository's first-parent
+commit history, grouped by commit date. Update it locally with:
+
+```bash
+node scripts/update-changelog.mjs
+```
+
+Use `node scripts/update-changelog.mjs --check` to verify that it is current.
+Commits whose subject contains `[skip changelog]` are omitted.
+
+The SHA-pinned, GitHub-owned workflow at
+[`.github/workflows/update-changelog.yml`](.github/workflows/update-changelog.yml)
+runs after each push to `main` and commits an updated file with the repository's
+`GITHUB_TOKEN`. Repository Actions settings must permit workflow write access.
+The workflow runs only the checked-in generator and does not install third-party
+plugins, hooks, packages, or scripts.
 
 ## Install
 
@@ -179,7 +197,7 @@ see [docs/using-skills-in-copilot.md](docs/using-skills-in-copilot.md) for step-
 | `deeper-research` | Cited Markdown research report | Node 18+, sibling ultracode; approved sources | Opt-in public web or configured read-only internal tools | Report only; no destructive actions |
 | `design-doc` | Reviewed Markdown RFC; optional Google Doc | grill-me and deeper-research contracts | Research sources; optional approved Google Docs | Confirms before replacing a file |
 | `grill-me` | In-chat decision ledger and final reconciliation | None | None | Read-only and chat-only unless an artifact is explicitly requested |
-| `review` | One confirmed GitHub pull-request review | Authenticated gh | GitHub or GHES API | Posts only confirmed comments; submission is explicit |
+| `pr-review` | One confirmed GitHub pull-request review | Authenticated gh | GitHub or GHES API | Posts only confirmed comments; submission is explicit |
 | `session-lessons` | Confirmed durable instruction rules | Node 18+ and local harness transcripts | None | Previews and confirms each local instruction-file edit |
 | `ultracode` | Structured multi-agent workflow result | Node 18+ and a supported agent CLI | None in local-read; opt-in in research-read | Read-only by default; write/exec requires an explicit profile |
 | `worklog` | Local worklog entries and summaries | Node 18+ and wl 0.4.x | Only an explicitly confirmed wl github operation | Uses a JSON-to-argv adapter; confirms initialization, imports, bulk writes, and overwrites |
@@ -224,14 +242,14 @@ codebase, and maintains an in-chat ledger until every material branch is
 reconciled.
 [Contract](skills/grill-me/SKILL.md)
 
-### `review`
+### `pr-review`
 
 Use with a GitHub or GHES pull-request URL. It pins the reviewed head SHA,
 supports added and deleted line locations, and inventories pending reviews. A
 conservative manifest/lockfile-only fast path checks CI for the pinned head and
 can recommend an explicitly confirmed approval for version-only changes. It
 posts only confirmed content and never silently submits a partial review.
-[Contract](skills/review/SKILL.md)
+[Contract](skills/pr-review/SKILL.md)
 
 ### `session-lessons`
 
