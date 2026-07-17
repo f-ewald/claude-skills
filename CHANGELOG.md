@@ -3,6 +3,10 @@
 This file is generated from the repository's first-parent commit history by
 [`scripts/update-changelog.mjs`](scripts/update-changelog.mjs). Do not edit it manually.
 
+## 2026-07-17
+
+- Rename review skill and add generated changelog ([`aa13bfc`](../../commit/aa13bfcf7447946d521904f070c0d45c4817a022))
+
 ## 2026-07-16
 
 - Add version-bump fast path to review skill ([`bb5161b`](../../commit/bb5161b350801ceeb898b58c8ea575c27f48779e))
