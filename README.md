@@ -197,6 +197,7 @@ see [docs/using-skills-in-copilot.md](docs/using-skills-in-copilot.md) for step-
 | `deeper-research` | Cited Markdown research report | Node 18+, sibling ultracode; approved sources | Opt-in public web or configured read-only internal tools | Report only; no destructive actions |
 | `design-doc` | Reviewed Markdown RFC; optional Google Doc | grill-me and deeper-research contracts | Research sources; optional approved Google Docs | Confirms before replacing a file |
 | `grill-me` | In-chat decision ledger and final reconciliation | None | None | Read-only and chat-only unless an artifact is explicitly requested |
+| `interview-assessment` | Professional interview summary and calibrated 1-5 rating | Interview notes or transcript | None | Read-only unless explicitly asked to append or update the supplied file |
 | `pr-review` | One confirmed GitHub pull-request review | Authenticated gh | GitHub or GHES API | Posts only confirmed comments; submission is explicit |
 | `session-lessons` | Confirmed durable instruction rules | Node 18+ and local harness transcripts | None | Previews and confirms each local instruction-file edit |
 | `ultracode` | Structured multi-agent workflow result | Node 18+ and a supported agent CLI | None in local-read; opt-in in research-read | Read-only by default; write/exec requires an explicit profile |
@@ -241,6 +242,15 @@ provides a recommended default and rationale, grounds factual questions in the
 codebase, and maintains an in-chat ledger until every material branch is
 reconciled.
 [Contract](skills/grill-me/SKILL.md)
+
+### `interview-assessment`
+
+Use for fair, professional analysis of interview notes or transcripts. It loads
+all questions, criteria, priorities, and weights from the supplied document,
+separates candidate-reported claims from interviewer observations, treats
+missing answers as unassessed, and produces a calibrated 1-5 rating with an
+explicit confidence level.
+[Contract](skills/interview-assessment/SKILL.md)
 
 ### `pr-review`
 

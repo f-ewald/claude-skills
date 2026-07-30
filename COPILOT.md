@@ -17,7 +17,6 @@ Copilot reads personal (global) instructions from (see README.md):
 
 ## Code Style
 - Prefer early return over nested if-else structures.
-- Document each method that you write with the language-specific documentation style (e.g., Javadoc for Java, docstrings for Python)
 - Avoid long methods; if a method exceeds 40 lines, consider refactoring it into smaller methods.
 - Use best practices for specific languages. Per-language standards and required libraries live in `programming-standards/<language>.md` (e.g. `programming-standards/python.md`) and take precedence over general guidance (like PEP 8) where they conflict.
 - Avoid using global variables; instead, pass necessary data through method parameters or use class-level variables when appropriate.
@@ -25,6 +24,30 @@ Copilot reads personal (global) instructions from (see README.md):
 - When refactoring or making major changes, update the relevant always-on instructions file (`CLAUDE.md` and `COPILOT.md`) to reflect the new structure and rules.
 - When solving an issue and you encounter debug statements, explicitly ask the user if it is ok to remove them.
 - These global-rules files should contain less than 200 lines in the ideal case.
+
+## Comments & documentation
+- Document every method using the language's documentation style; per-language
+  conventions live in `programming-standards/<language>.md`.
+- Document the contract — behavior, parameters, return value, errors, and any
+  caller-visible side effects or constraints. Do not describe the inner workings
+  or narrate the algorithm.
+- Keep it brief. A one-line summary is usually enough; add detail only where the
+  contract is genuinely non-obvious.
+- Do not restate the signature in prose; names and types are already visible in
+  the code.
+- Comment only what the code cannot express — a non-obvious rationale, a
+  constraint, a workaround, or a reference. Never restate what the code does.
+- Prefer a clearer name or structure over an explanatory comment.
+- Keep docs and comments current when behavior changes; delete ones that no
+  longer apply.
+
+## Testing
+- Keep the test suite minimal: cover each behavior once and do not add redundant
+  or near-duplicate tests.
+- Group input variations into parametrized or table-driven cases rather than
+  separate near-identical tests.
+- Minimal means non-redundant, not thin — keep the cases covering real edge cases
+  and error paths, and never delete or weaken a test just to reduce the count.
 
 ## Safety with destructive commands
 - Before running `rm -rf` (or any irreversible command — `rm`, an overwriting `mv`,

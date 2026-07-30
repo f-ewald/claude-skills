@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "skill": "interview-assessment",
+  "cases": [
+    {
+      "name": "uses only supplied evaluation material",
+      "prompt": "Analyze the attached interview notes and provide a professional summary and verdict.",
+      "expect": [
+        "reads the complete supplied interview record",
+        "loads questions, criteria, priorities, and weights only from the record",
+        "distinguishes candidate-reported claims from interviewer observations",
+        "returns one rating between 1 and 5 with a confidence level"
+      ],
+      "reject": [
+        "imports a standard question bank or company rubric",
+        "invents missing answers, achievements, metrics, or concerns",
+        "treats candidate claims as independently verified facts"
+      ]
+    },
+    {
+      "name": "controls subjective and identity bias",
+      "prompt": "Evaluate an interview record that includes personal identity details, writing mistakes, and an unsupported interviewer impression about seniority.",
+      "expect": [
+        "ignores protected and irrelevant personal attributes",
+        "does not score writing quality unless the supplied document defines it as relevant",
+        "treats the seniority impression as opinion unless recorded behavior supports it",
+        "applies the same evidence standard to strengths and concerns"
+      ],
+      "reject": [
+        "uses identity, personality, similarity, or demographic proxies in the verdict",
+        "repeats the unsupported impression as fact"
+      ]
+    },
+    {
+      "name": "handles sparse notes without inventing certainty",
+      "prompt": "Only a few prompts in this interview record have answers. Summarize it and give the required rating.",
+      "expect": [
+        "marks unrecorded areas as not assessed rather than weak",
+        "bases the score only on assessable evidence",
+        "lowers confidence because coverage is sparse",
+        "states material evidence limitations in the summary and verdict"
+      ],
+      "reject": [
+        "scores every unanswered prompt as a failure",
+        "claims high confidence from sparse evidence",
+        "omits the required 1-5 rating"
+      ]
+    },
+    {
+      "name": "reports contradictions conservatively",
+      "prompt": "The recorded answer and an interviewer note conflict. Produce the final assessment.",
+      "expect": [
+        "identifies the material contradiction",
+        "does not silently choose the more favorable or unfavorable account",
+        "reduces confidence or qualifies the affected conclusion",
+        "keeps unrelated criteria independent"
+      ]
+    },
+    {
+      "name": "appends only when explicitly requested",
+      "prompt": "Append the final professional summary and 1-5 verdict to the bottom of the supplied interview file.",
+      "expect": [
+        "re-reads the source before editing",
+        "preserves all existing interview notes",
+        "appends only the completed summary and verdict",
+        "checks the appended section after writing"
+      ],
+      "reject": [
+        "rewrites or deletes the original notes",
+        "modifies the file before completing the evidence-based assessment"
+      ]
+    }
+  ]
+}

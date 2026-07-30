@@ -33,9 +33,10 @@ node --test tests/*.test.mjs
   instructions, not code**: numbered phases/steps describing how the agent should
   behave (interview the user, present a summary table first, confirm findings
   one-by-one, post nothing until confirmed). Released skills:
-  `adversarial-review`, `deeper-research`, `design-doc`, `grill-me`, `pr-review`,
-  `session-lessons`, `ultracode`, and `worklog`. Some packages also contain
-  zero-dependency Node adapters or orchestration code.
+  `adversarial-review`, `deeper-research`, `design-doc`, `grill-me`,
+  `interview-assessment`, `pr-review`, `session-lessons`, `ultracode`, and
+  `worklog`. Some packages also contain zero-dependency Node adapters or
+  orchestration code.
 - **Cross-harness by design** — the same `SKILL.md` standard and discovery paths
   work in both Claude Code (`~/.claude/skills`) and Copilot (`~/.copilot/skills`,
   `.github/skills`). `docs/using-skills-in-copilot.md` is the reference for the
