@@ -3,6 +3,10 @@
 This file is generated from the repository's first-parent commit history by
 [`scripts/update-changelog.mjs`](scripts/update-changelog.mjs). Do not edit it manually.
 
+## 2026-07-30
+
+- Overhaul prompts, add interview-assessment ([`36fc53d`](../../commit/36fc53d3531e87515988e9fe57da3d01dfac5b62))
+
 ## 2026-07-17
 
 - Rename review skill and add generated changelog ([`aa13bfc`](../../commit/aa13bfcf7447946d521904f070c0d45c4817a022))
