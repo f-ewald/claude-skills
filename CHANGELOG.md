@@ -3,6 +3,10 @@
 This file is generated from the repository's first-parent commit history by
 [`scripts/update-changelog.mjs`](scripts/update-changelog.mjs). Do not edit it manually.
 
+## 2026-08-06
+
+- Fix pr-review comment reconciliation and gh pagination ([`2688d9a`](../../commit/2688d9a0dec452bb02765b7be4f42215850f0e46))
+
 ## 2026-07-30
 
 - Overhaul prompts, add interview-assessment ([`36fc53d`](../../commit/36fc53d3531e87515988e9fe57da3d01dfac5b62))
