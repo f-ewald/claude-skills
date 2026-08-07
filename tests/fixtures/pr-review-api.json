@@ -1,0 +1,270 @@
+{
+  "user": {
+    "login": "octocat",
+    "id": 1
+  },
+  "pullRequest": {
+    "url": "https://github.example.com/octo/demo/pull/7",
+    "number": 7,
+    "headRefOid": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+    "baseRefOid": "bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222",
+    "title": "Add retry handling",
+    "body": "Adds a retry helper.",
+    "changedFiles": 1
+  },
+  "compare": {
+    "status": "ahead",
+    "total_commits": 1,
+    "files": [
+      {
+        "filename": "src/app.js",
+        "status": "modified",
+        "sha": "cccc3333cccc3333cccc3333cccc3333cccc3333",
+        "patch": "@@ -300,3 +300,4 @@\n context\n+added\n"
+      }
+    ]
+  },
+  "review": {
+    "id": 999,
+    "node_id": "PRR_kwDOABCD123",
+    "state": "PENDING",
+    "commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+    "body": "",
+    "user": {
+      "login": "octocat"
+    }
+  },
+  "submittedReview": {
+    "id": 999,
+    "node_id": "PRR_kwDOABCD123",
+    "state": "COMMENTED",
+    "commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+    "body": "Review body.",
+    "user": {
+      "login": "octocat"
+    }
+  },
+  "createdReview": {
+    "id": 999,
+    "node_id": "PRR_kwDOABCD123",
+    "state": "PENDING",
+    "commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+    "body": "",
+    "user": {
+      "login": "octocat"
+    }
+  },
+  "blob": "export function retry() {\n  return true;\n}\n",
+  "diff": "diff --git a/src/app.js b/src/app.js\n@@ -300,3 +300,4 @@\n context\n+added\n",
+  "graphql": {
+    "blob": {
+      "data": {
+        "repository": {
+          "object": {
+            "oid": "cccc3333cccc3333cccc3333cccc3333cccc3333",
+            "byteSize": 42,
+            "isBinary": false
+          }
+        }
+      }
+    },
+    "statusCheckRollup": {
+      "data": {
+        "repository": {
+          "object": {
+            "__typename": "Commit",
+            "oid": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+            "statusCheckRollup": {
+              "contexts": {
+                "nodes": [
+                  {
+                    "__typename": "CheckRun",
+                    "name": "build",
+                    "status": "COMPLETED",
+                    "conclusion": "SUCCESS",
+                    "detailsUrl": "https://github.example.com/checks/1",
+                    "checkSuite": {
+                      "workflowRun": {
+                        "workflow": {
+                          "name": "ci"
+                        }
+                      }
+                    }
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false,
+                  "endCursor": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "addPullRequestReviewThread": {
+      "data": {
+        "addPullRequestReviewThread": {
+          "thread": {
+            "id": "PRRT_kwDOABCD456",
+            "path": "src/app.js",
+            "diffSide": "RIGHT",
+            "line": 302,
+            "startDiffSide": null,
+            "startLine": null,
+            "subjectType": "LINE",
+            "comments": {
+              "nodes": [
+                {
+                  "id": "PRRC_kwDOABCD789",
+                  "fullDatabaseId": 555,
+                  "body": "Guard against a negative retry budget.",
+                  "path": "src/app.js",
+                  "line": 302,
+                  "originalLine": 302,
+                  "startLine": null,
+                  "originalStartLine": null,
+                  "commit": {
+                    "oid": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111"
+                  },
+                  "originalCommit": {
+                    "oid": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111"
+                  },
+                  "pullRequestReview": {
+                    "id": "PRR_kwDOABCD123",
+                    "databaseId": 999
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "reviewThreads": {
+      "data": {
+        "repository": {
+          "pullRequest": {
+            "reviewThreads": {
+              "nodes": [
+                {
+                  "id": "PRRT_kwDOABCD456",
+                  "path": "src/app.js",
+                  "diffSide": "RIGHT",
+                  "line": 302,
+                  "startDiffSide": null,
+                  "startLine": null,
+                  "subjectType": "LINE",
+                  "isOutdated": false,
+                  "comments": {
+                    "nodes": [
+                      {
+                        "fullDatabaseId": 555,
+                        "body": "Guard against a negative retry budget.",
+                        "pullRequestReview": {
+                          "databaseId": 999
+                        }
+                      }
+                    ]
+                  }
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "reviewPages": [
+    [
+      {
+        "id": 999,
+        "node_id": "PRR_kwDOABCD123",
+        "state": "PENDING",
+        "commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+        "body": "",
+        "user": {
+          "login": "octocat"
+        }
+      }
+    ],
+    [
+      {
+        "id": 888,
+        "node_id": "PRR_kwDOABCD999",
+        "state": "COMMENTED",
+        "commit_id": "bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222",
+        "body": "Older submitted review.",
+        "user": {
+          "login": "hubot"
+        }
+      }
+    ]
+  ],
+  "reviewCommentPages": [
+    [
+      {
+        "id": 555,
+        "pull_request_review_id": 999,
+        "path": "src/app.js",
+        "commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+        "original_commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+        "position": 4,
+        "original_position": 4,
+        "body": "Guard against a negative retry budget."
+      }
+    ],
+    [
+      {
+        "id": 556,
+        "pull_request_review_id": 999,
+        "path": "old/path.js",
+        "commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+        "original_commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+        "position": 2,
+        "original_position": 2,
+        "body": "Restore the deleted null check."
+      }
+    ]
+  ],
+  "comments": {
+    "555": {
+      "id": 555,
+      "pull_request_review_id": 999,
+      "path": "src/app.js",
+      "commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+      "original_commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+      "side": "RIGHT",
+      "line": 302,
+      "original_line": 302,
+      "start_side": null,
+      "start_line": null,
+      "original_start_line": null,
+      "subject_type": "line",
+      "position": 4,
+      "original_position": 4,
+      "body": "Guard against a negative retry budget."
+    },
+    "556": {
+      "id": 556,
+      "pull_request_review_id": 999,
+      "path": "old/path.js",
+      "commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+      "original_commit_id": "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111",
+      "position": 2,
+      "original_position": 2,
+      "body": "Restore the deleted null check.",
+      "side": "LEFT",
+      "line": 20,
+      "original_line": 20,
+      "start_side": "LEFT",
+      "start_line": 18,
+      "original_start_line": 18,
+      "subject_type": "line"
+    }
+  }
+}

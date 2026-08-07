@@ -255,8 +255,10 @@ explicit confidence level.
 ### `pr-review`
 
 Use with a GitHub or GHES pull-request URL. It pins the reviewed head SHA,
-supports added and deleted line locations, and inventories pending reviews. A
-conservative manifest/lockfile-only fast path checks CI for the pinned head and
+supports added and deleted line locations, and inventories pending reviews. It
+reconciles every comment against its canonical per-comment record, so a lossy
+list projection cannot strand a pending review. A conservative
+manifest/lockfile-only fast path checks CI for the pinned head and
 can recommend an explicitly confirmed approval for version-only changes. It
 posts only confirmed content and never silently submits a partial review.
 [Contract](skills/pr-review/SKILL.md)

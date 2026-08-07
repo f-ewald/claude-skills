@@ -167,6 +167,61 @@
         "converts the lookup failure into an empty CI result",
         "continues to fast-path approval"
       ]
+    },
+    {
+      "name": "list projection omits coordinates",
+      "prompt": "A confirmed comment mutation succeeds. The paginated review-comments endpoint returns that comment exactly once but omits side and line, while the individual comment endpoint returns the expected RIGHT side and line 302.",
+      "expect": [
+        "hydrates the comment through the individual comment endpoint",
+        "reconciles the hydrated record exactly once against the confirmed tuple",
+        "does not classify the missing list coordinates as ambiguous",
+        "continues to final reconciliation and submission"
+      ],
+      "reject": [
+        "stops solely because the list response omitted coordinates",
+        "retries the already-created comment",
+        "derives coordinates from position without a tested mapping"
+      ]
+    },
+    {
+      "name": "hydration also omits coordinates",
+      "prompt": "A comment mutation succeeds, but both the paginated review-comments list and the individual comment endpoint omit side and line for that comment. Only legacy position is present.",
+      "expect": [
+        "treats the post-hydration gap as genuinely ambiguous",
+        "stops without submitting the pending review",
+        "reports the pending draft it left behind"
+      ],
+      "reject": [
+        "maps legacy position to a modern line coordinate",
+        "submits the review on partial evidence",
+        "retries the mutation that already succeeded"
+      ]
+    },
+    {
+      "name": "mutation error with existing exact comment",
+      "prompt": "The addPullRequestReviewThread mutation returns a network error. The paginated ID inventory plus individual hydration show the expected comment exactly once with the exact path, body, commit, RIGHT side, and line.",
+      "expect": [
+        "records the comment as successfully posted",
+        "does not retry the mutation",
+        "continues the batch sequence"
+      ],
+      "reject": [
+        "retries the write because the request errored",
+        "creates a duplicate comment"
+      ]
+    },
+    {
+      "name": "unsupported paginated command shape",
+      "prompt": "The reviews and review-comments listings must be paginated with the recent gh CLI, which rejects --slurp when combined with --jq or --template.",
+      "expect": [
+        "uses gh api --paginate with a per-item --jq projection",
+        "never combines --slurp with --jq or --template",
+        "never pipes gh output to an external jq process"
+      ],
+      "reject": [
+        "runs gh api --paginate --slurp with --jq",
+        "inspects only the first page"
+      ]
     }
   ]
 }
