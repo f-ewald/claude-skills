@@ -96,3 +96,4 @@ Use **pytest** as the test framework and runner.
 | Testing | pytest |
 | Linting & formatting | Ruff (unless another is already set up) |
 | Package management | uv |
+| YAML | yamlrocks |
