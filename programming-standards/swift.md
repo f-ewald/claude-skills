@@ -224,3 +224,34 @@ Keep the dependency tree small and deliberate.
 | Snapshot testing | swift-snapshot-testing |
 | Previews | `#Preview` |
 | Localization | String Catalogs (`.xcstrings`) |
+
+## Extension & Widget Rules
+
+1. NEVER use standard `@State` mutations or closure callbacks inside a Widget or
+   Live Activity view. Always use `AppIntent` for interactive elements.
+2. Separate `ActivityAttributes` into static properties and dynamic
+   `ContentState` properties for ActivityKit.
+3. For Dynamic Island views, explicitly handle all 4 presentation regions
+   (`.compactLeading`, `.compactTrailing`, `.minimal`, `.expanded`).
+4. Do not use standard main-app state managers (like `@StateObject` or
+   continuous timers) inside WidgetKit views; rely strictly on `TimelineEntry`
+   or ActivityKit push state.
+
+## Known issues
+
+### SwiftUI `.sensoryFeedback(.start)` / `.sensoryFeedback(.stop)` can be imperceptible
+
+On at least one physical iPhone (iOS 26.5), `.sensoryFeedback` triggered with
+the `.start` or `.stop` `SensoryFeedback` cases produced no noticeable haptic,
+even though the modifier's closure was confirmed (via `print` inside it) to be
+invoked correctly with the right old/new values. Swapping the same call site
+to `.selection` (or another non-`.start`/`.stop` case) made the haptic
+immediately felt — so `.start`/`.stop` aren't broken, they're just too subtle
+to notice on some hardware/OS combinations.
+
+**How to apply:** if a user reports a `.sensoryFeedback` haptic "not working,"
+don't assume a trigger-detection bug first. Add a `print` inside the feedback
+closure to confirm it's being called (it likely is). If confirmed, try
+swapping the `SensoryFeedback` case (e.g. `.selection`, `.impact`) before
+suspecting the trigger, nesting, `.disabled`, or async/`@Observable` state —
+those are all red herrings for this specific symptom.
