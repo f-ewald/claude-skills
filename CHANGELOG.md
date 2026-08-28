@@ -3,6 +3,10 @@
 This file is generated from the repository's first-parent commit history by
 [`scripts/update-changelog.mjs`](scripts/update-changelog.mjs). Do not edit it manually.
 
+## 2026-08-27
+
+- Add widget/extension rules and sensoryFeedback gotcha to Swift standards ([`4edcfb5`](../../commit/4edcfb52c78e5101f82d4339167f99866812bd93))
+
 ## 2026-08-18
 
 - Add yamlrocks ([`176f8d0`](../../commit/176f8d0487216296a4d13ef3390096d1449789dc))
