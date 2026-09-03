@@ -255,3 +255,40 @@ closure to confirm it's being called (it likely is). If confirmed, try
 swapping the `SensoryFeedback` case (e.g. `.selection`, `.impact`) before
 suspecting the trigger, nesting, `.disabled`, or async/`@Observable` state —
 those are all red herrings for this specific symptom.
+
+### `Logger` `.debug` (and `.info`) messages never reach `log stream`/Console.app in Simulator
+
+`os.Logger`/`os_log` calls at `.debug` (and, unless configured, `.info`) level
+are not persisted and are only visible if something has raised that
+subsystem's capture level — but on the **Simulator** (confirmed on watchOS
+Simulator; likely applies to iOS/tvOS Simulator too), the fix is two-layered
+and the usual host-level instructions don't fully work:
+
+1. `sudo log config --mode level:debug --subsystem <id>` on the **host** only
+   configures the **host's** logging policy
+   (`/Library/Preferences/Logging/Subsystems/<id>.plist`). It has **no effect**
+   on a Simulator process, because each Simulator device keeps its own,
+   separate policy store at
+   `~/Library/Developer/CoreSimulator/Devices/<UDID>/data/Library/Preferences/Logging/Subsystems/<id>.plist`.
+   Configure that one instead with:
+   `xcrun simctl spawn <udid> log config --mode level:debug --subsystem <id>`
+   (no `sudo` needed — the directory is user-owned). Verify with
+   `xcrun simctl spawn <udid> log config --status --subsystem <id>`.
+2. Even with that simulator-local policy confirmed as `DEBUG` (and after a full
+   `simctl shutdown`/`boot` to rule out a stale cache), `.debug`-level messages
+   still never reached the host's `log stream`/Console.app in testing — only
+   `.info` and above did. This points to a further, undocumented relay cap
+   between the Simulator's internal log daemon and the host that isn't
+   controlled by `log config` or any other public interface.
+
+**How to apply:** don't assume a missing subsystem-level config is the whole
+story on Simulator. To confirm whether logging itself works, write a minimal
+host-side Swift executable (`swiftc` a few lines using the same
+`Logger(subsystem:category:)` and levels) and check it against `log stream
+--level debug` — if that shows `.debug` fine, the app's logging code is
+correct and the gap is Simulator-specific relay behavior, not a bug to chase
+in the target app. In that case, don't keep tweaking `log config`: either test
+on a **physical device** (which may not have this cap), temporarily raise the
+diagnostic calls to `.notice`/`.error` for local iteration, or attach Xcode's
+debugger directly to the scheme you need (its console reads the process's log
+output before the relay, so it always shows every level).
