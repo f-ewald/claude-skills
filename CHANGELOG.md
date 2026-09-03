@@ -3,6 +3,10 @@
 This file is generated from the repository's first-parent commit history by
 [`scripts/update-changelog.mjs`](scripts/update-changelog.mjs). Do not edit it manually.
 
+## 2026-09-02
+
+- Add Swift known issue: Simulator drops debug logs even with log config ([`1ea6d7d`](../../commit/1ea6d7dd3731a2920bc1835b9c4dec19cb45c71c))
+
 ## 2026-08-27
 
 - Add widget/extension rules and sensoryFeedback gotcha to Swift standards ([`4edcfb5`](../../commit/4edcfb52c78e5101f82d4339167f99866812bd93))
