@@ -5,6 +5,7 @@ This file is generated from the repository's first-parent commit history by
 
 ## 2026-09-02
 
+- Fix Swift known issue: Simulator debug logs ARE recoverable ([`25b2d32`](../../commit/25b2d321d0616037c9e29a04ee372320cabe4b1b))
 - Add Swift known issue: Simulator drops debug logs even with log config ([`1ea6d7d`](../../commit/1ea6d7dd3731a2920bc1835b9c4dec19cb45c71c))
 
 ## 2026-08-27
