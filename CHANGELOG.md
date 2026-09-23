@@ -5,6 +5,7 @@ This file is generated from the repository's first-parent commit history by
 
 ## 2026-09-23
 
+- Consolidate CLAUDE.md and COPILOT.md into AGENTS.md ([`6e65164`](../../commit/6e65164075e6f8683470b56bdba92f6d03cb45ab))
 - Merge remote-tracking branch 'origin/main' ([`b59b95f`](../../commit/b59b95fef491fda8b6d005ca60f84313b8751962))
 - Document stream-closing pitfalls for ijson streaming ([`0f80019`](../../commit/0f8001977ee8ba543f5209d568e96e41d6436830))
 - Add ijson streaming JSON guidance to Python standards ([`c7d8624`](../../commit/c7d862445bcbd6c74c21a1b411ed14753536e599))
