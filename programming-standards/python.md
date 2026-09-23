@@ -164,6 +164,18 @@ regardless of payload size.
   are acceptable.
 - Check `ijson.backend` is `yajl2_c`. The pure-Python fallback is much slower and
   is selected silently when the C extension isn't available.
+- **Always close the stream.** This is the most common pitfall. Open it with
+  `async with client.stream(...)` / `with client.stream(...)` (or `with urlopen(...)`)
+  so the connection returns to the pool even when parsing raises. A stream left
+  open keeps its connection checked out until the pool runs dry and httpx raises
+  `PoolTimeout`.
+- A streaming generator like the one below only leaves its `async with` when it is
+  exhausted or closed — `break`ing out of the loop does **not** close it. When the
+  caller may stop early, wrap it in `contextlib.aclosing()` (`contextlib.closing()`
+  for sync generators) so the stream closes immediately rather than whenever the
+  garbage collector finalizes the generator.
+- Call `parser.close()` after the last chunk: it flushes the final items and
+  raises `IncompleteJSONError` if the body was truncated.
 
 ```python
 async def fetch_records(client: httpx.AsyncClient, url: str) -> AsyncIterator[dict]:
@@ -188,6 +200,15 @@ async def fetch_records(client: httpx.AsyncClient, url: str) -> AsyncIterator[di
     parser.close()
     for record in records:
         yield record
+
+
+async def first_match(client: httpx.AsyncClient, url: str) -> dict | None:
+    """Returns the first matching record, closing the stream as soon as it is found."""
+    async with contextlib.aclosing(fetch_records(client, url)) as records:
+        async for record in records:
+            if is_match(record):
+                return record
+    return None
 ```
 
 ## Testing
