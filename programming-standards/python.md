@@ -143,6 +143,53 @@ recommend Quart for mainly-async codebases.
   buffering. Verify HTTP/2 end to end if you chose a server for it — a proxy that
   doesn't pass it through silently downgrades you.
 
+## Streaming JSON
+
+**Use ijson to consume large JSON responses incrementally.** `response.json()`
+/ `json.loads()` buffer the whole body and build the full object tree in memory;
+ijson parses the stream and yields objects as they complete, so memory stays flat
+regardless of payload size.
+
+- Use `ijson.items(source, prefix)` to yield the objects under a prefix (e.g.
+  `"results.item"` for each element of a top-level `results` array), and
+  `ijson.kvitems` when individual objects are themselves too large. Drop to
+  `ijson.parse` only when you need raw events.
+- Pass a file-like object with `read()` (sync) or `async read()` directly. For a
+  chunk iterator such as httpx's `iter_bytes()` / `aiter_bytes()`, push chunks
+  into `ijson.items_coro()` as below — it works on every 3.x release. Feed
+  **bytes**, not `str`.
+- In async code, drive ijson from an async source — consistent with the async
+  rules above, never read a blocking stream from a coroutine.
+- Numbers come back as `Decimal` by default; pass `use_float=True` when floats
+  are acceptable.
+- Check `ijson.backend` is `yajl2_c`. The pure-Python fallback is much slower and
+  is selected silently when the C extension isn't available.
+
+```python
+async def fetch_records(client: httpx.AsyncClient, url: str) -> AsyncIterator[dict]:
+    """Yields each record from a large JSON response without buffering the body.
+
+    Args:
+        client: The HTTP client to issue the request with.
+        url: Endpoint returning ``{"results": [...]}``.
+
+    Yields:
+        Each element of the ``results`` array.
+    """
+    records = ijson.sendable_list()
+    parser = ijson.items_coro(records, "results.item")
+    async with client.stream("GET", url) as response:
+        response.raise_for_status()
+        async for chunk in response.aiter_bytes():
+            parser.send(chunk)
+            for record in records:
+                yield record
+            del records[:]
+    parser.close()
+    for record in records:
+        yield record
+```
+
 ## Testing
 
 Use **pytest** as the test framework and runner.
@@ -179,3 +226,4 @@ Use **pytest** as the test framework and runner.
 | MySQL driver | asyncmy |
 | Redis | redis-py — `import redis.asyncio`. Never `aioredis` |
 | HTTP client | httpx (async API); aiohttp when asyncio-only is fine |
+| Streaming JSON parsing | ijson (C `yajl2_c` backend) |
