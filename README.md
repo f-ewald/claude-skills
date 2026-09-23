@@ -1,8 +1,7 @@
 # Cross-harness Agent Skills
 
 * `skills/` contains reusable Agent Skills shared by Claude Code and GitHub Copilot.
-* `CLAUDE.md` contains the global rules for Claude Code.
-* `COPILOT.md` contains the equivalent global rules for GitHub Copilot CLI.
+* `AGENTS.md` contains the global rules shared by Claude Code and GitHub Copilot CLI.
 * `programming-standards/` contains per-language coding standards and required libraries (e.g. `python.md`).
 
 ## Changelog
@@ -41,7 +40,7 @@ for skill in /path/to/claude-skills/skills/*; do
 done
 
 # Run these only when each destination is absent.
-ln -s /path/to/claude-skills/CLAUDE.md ~/.claude/CLAUDE.md
+ln -s /path/to/claude-skills/AGENTS.md ~/.claude/CLAUDE.md
 ln -s /path/to/claude-skills/programming-standards/ ~/.claude/programming-standards
 ln -s /path/to/claude-skills/statusline.sh ~/.claude/statusline.sh
 ```
@@ -52,7 +51,7 @@ ln -s /path/to/claude-skills/statusline.sh ~/.claude/statusline.sh
 copilot skill add /path/to/claude-skills/skills
 
 # Run these only when each destination is absent.
-ln -s /path/to/claude-skills/COPILOT.md ~/.copilot/copilot-instructions.md
+ln -s /path/to/claude-skills/AGENTS.md ~/.copilot/copilot-instructions.md
 ln -s /path/to/claude-skills/programming-standards/ ~/.copilot/programming-standards
 ```
 
@@ -62,7 +61,7 @@ Copilot CLI also supports per-skill links under `~/.copilot/skills/` or
 Copilot CLI. Project-level `.github/skills/`, `.agents/skills/`, and
 `.claude/skills/` are supported by Copilot CLI.
 
-> **Company-managed rules:** If `~/.claude/CLAUDE.md` is already provided and managed by your company, don't overwrite it. Symlink this repo's rules under an alternate name instead (e.g. `ln -s /path/to/claude-skills/CLAUDE.md ~/.claude/CLAUDE.personal.md`) so the company file stays intact, and reference the personal file from the company-managed `CLAUDE.md` (e.g. with an `@CLAUDE.personal.md` import) if you want both to apply.
+> **Company-managed rules:** If `~/.claude/CLAUDE.md` is already provided and managed by your company, don't overwrite it. Symlink this repo's rules under an alternate name instead (e.g. `ln -s /path/to/claude-skills/AGENTS.md ~/.claude/CLAUDE.personal.md`) so the company file stays intact, and reference the personal file from the company-managed `CLAUDE.md` (e.g. with an `@CLAUDE.personal.md` import) if you want both to apply.
 
 Update your `~/.claude/settings.json` and add the following as a root level key:
 
@@ -168,18 +167,22 @@ copilot() {
 
 After adding it, reload your shell config — `source ~/.zshrc` (zsh) or `source ~/.bashrc` (bash). Sessions persist until you run `/clear` inside Copilot.
 
-## GitHub Copilot global rules
+## Global rules
 
-[`COPILOT.md`](COPILOT.md) is the GitHub Copilot CLI counterpart to [`CLAUDE.md`](CLAUDE.md): the same always-on global coding rules (code style + destructive-command safety), for the Copilot harness. Distribute it the same way you symlink `CLAUDE.md`, but into Copilot's personal-instructions location:
+[`AGENTS.md`](AGENTS.md) holds the always-on global coding rules (code style, documentation, testing, destructive-command safety, git commits) for **both** harnesses. It replaces the former `CLAUDE.md` / `COPILOT.md` pair, so there is nothing left to keep in sync.
 
-```bash
-ln -s /path/to/claude-skills/COPILOT.md ~/.copilot/copilot-instructions.md
-ln -s /path/to/claude-skills/programming-standards/ ~/.copilot/programming-standards
-```
+Neither harness reads a *personal* `AGENTS.md`, so symlink the one file into each harness's personal-instructions location under the name it expects (the [Install](#install) commands above do this):
 
-Copilot CLI reads `~/.copilot/copilot-instructions.md` as personal (global) custom instructions, so these rules then apply in every Copilot session. Keep `COPILOT.md` in sync with `CLAUDE.md`.
+| Harness | Personal instructions path |
+| --- | --- |
+| Claude Code | `~/.claude/CLAUDE.md` |
+| GitHub Copilot CLI | `~/.copilot/copilot-instructions.md`, or any `~/.copilot/instructions/*.instructions.md` |
 
-> **Company-managed rules:** If `~/.copilot/copilot-instructions.md` is already provided and managed by your company, don't overwrite it. Symlink this repo's rules under an alternate name instead (e.g. `ln -s /path/to/claude-skills/COPILOT.md ~/.copilot/copilot-instructions.personal.md`) so the company file stays intact, and reference the personal file from the company-managed instructions if you want both to apply.
+Inside this repository both harnesses also pick up `AGENTS.md` as project instructions. Claude Code reads a project `AGENTS.md` only when no `CLAUDE.md` exists in the working directory or above it, and only on v2.1.277+ with feature flags enabled. Elsewhere it gets these rules through the `~/.claude/CLAUDE.md` symlink.
+
+### GitHub Copilot CLI specifics
+
+> **Company-managed rules:** If `~/.copilot/copilot-instructions.md` is already provided and managed by your company, don't overwrite it. Link this repo's rules into the instructions directory instead (e.g. `ln -s /path/to/claude-skills/AGENTS.md ~/.copilot/instructions/global-rules.instructions.md`). Copilot CLI loads every `~/.copilot/instructions/**/*.instructions.md` file alongside the company file.
 
 > Not to be confused with [`.github/copilot-instructions.md`](.github/copilot-instructions.md), which documents *this repo's* architecture and is auto-loaded only when working inside this repo.
 

@@ -133,12 +133,13 @@ Routing:
 - Claude global: `~/.claude/CLAUDE.md`
 - Copilot global: `~/.copilot/copilot-instructions.md`
 - Shared global: both files after one confirmation
-- Claude repository: `<repo>/CLAUDE.md`
+- Claude repository: `<repo>/CLAUDE.md`, or `<repo>/AGENTS.md` when the
+  repository has one and no `CLAUDE.md`
 - Copilot repository: `<repo>/.github/copilot-instructions.md`
 
-Resolve symlinks portably with Node. If a global path resolves into this
-repository's distributed top-level `CLAUDE.md` or `COPILOT.md`, reconcile that
-pair together so their shared global rules remain synchronized.
+Resolve symlinks portably with Node and de-duplicate by canonical path. In this
+repository both global paths are symlinks to the single distributed top-level
+`AGENTS.md`, so a shared global rule patches that one file once.
 
 Before every write:
 

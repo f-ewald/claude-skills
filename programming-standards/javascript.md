@@ -1,7 +1,7 @@
 # JavaScript Standards
 
 Language-specific standards and libraries for JavaScript code. These build on the
-always-on rules in `CLAUDE.md` / `COPILOT.md`; where this file is more specific
+always-on rules in `AGENTS.md`; where this file is more specific
 (e.g. formatting), it takes precedence over general JavaScript style guidance
 where they conflict.
 

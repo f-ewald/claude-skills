@@ -17,23 +17,13 @@ import {
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const skillsDirectory = join(repositoryRoot, 'skills');
 
-/**
- * Returns the shared global-rules body, excluding harness-specific headers.
- *
- * @param {string} text - Complete instruction file.
- * @returns {string} Shared rules from Code Style onward.
- */
-function sharedRules(text) {
-  const marker = '## Code Style';
-  const index = text.indexOf(marker);
-  assert.notEqual(index, -1, `missing ${marker}`);
-  return text.slice(index).trim();
-}
-
-test('Claude and Copilot global rules share one common body', () => {
-  const claude = readFileSync(join(repositoryRoot, 'CLAUDE.md'), 'utf8');
-  const copilot = readFileSync(join(repositoryRoot, 'COPILOT.md'), 'utf8');
-  assert.equal(sharedRules(claude), sharedRules(copilot));
+test('global rules live only in AGENTS.md and stay under 200 lines', () => {
+  const agents = readFileSync(join(repositoryRoot, 'AGENTS.md'), 'utf8');
+  assert.match(agents, /^## Code Style$/m);
+  assert.ok(agents.split('\n').length < 200, 'AGENTS.md must stay under 200 lines');
+  for (const retired of ['CLAUDE.md', 'COPILOT.md']) {
+    assert.equal(existsSync(join(repositoryRoot, retired)), false, `${retired} must not be reintroduced`);
+  }
 });
 
 test('all released skills have valid metadata and eval scenarios', () => {

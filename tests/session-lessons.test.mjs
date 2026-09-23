@@ -43,7 +43,7 @@ import {
   inspectDirtyState,
   preflightTarget,
   previewExactDiff,
-  reconcileInstructionPair,
+  canonicalizeInstructionTargets,
   resolveTargetPath,
   routeInstructionTargets,
   targetLockPath,
@@ -470,7 +470,7 @@ test('applies existing-rule precedence and contradiction detection', () => {
   assert.ok(confidenceForSignals(['abort']) < confidenceForSignals(['user-correction']));
 });
 
-test('routes shared global rules and reconciles the repository instruction pair', () => {
+test('routes instruction targets and collapses targets sharing one canonical file', () => {
   const targets = routeInstructionTargets({
     scope: 'global',
     harness: 'shared',
@@ -482,30 +482,33 @@ test('routes shared global rules and reconciles the repository instruction pair'
     '/home/example/.copilot/copilot-instructions.md',
   ]);
 
-  const globalTarget = '/home/example/.copilot/copilot-instructions.md';
-  const repositoryClaude = join(REPOSITORY_ROOT, 'CLAUDE.md');
-  const repositoryCopilot = join(REPOSITORY_ROOT, 'COPILOT.md');
-  const reconciled = reconcileInstructionPair(
-    [globalTarget],
-    REPOSITORY_ROOT,
-    {
-      scope: 'global',
-      resolver: (path) => path === globalTarget ? repositoryCopilot : path,
-    },
-  );
-  assert.deepEqual(reconciled, [repositoryCopilot, repositoryClaude]);
+  const cases = [
+    { files: [], expected: '/repo/CLAUDE.md' },
+    { files: ['/repo/AGENTS.md'], expected: '/repo/AGENTS.md' },
+    { files: ['/repo/AGENTS.md', '/repo/CLAUDE.md'], expected: '/repo/CLAUDE.md' },
+  ];
+  for (const { files, expected } of cases) {
+    assert.deepEqual(
+      routeInstructionTargets({
+        scope: 'repository',
+        harness: 'shared',
+        homeDirectory: '/home/example',
+        repositoryRoot: '/repo',
+        exists: (path) => files.includes(path),
+      }),
+      [expected, '/repo/.github/copilot-instructions.md'],
+      `repository files: ${files.join(', ') || 'none'}`,
+    );
+  }
 
+  const repositoryAgents = join(REPOSITORY_ROOT, 'AGENTS.md');
   assert.deepEqual(
-    reconcileInstructionPair([repositoryClaude], REPOSITORY_ROOT),
-    [repositoryClaude],
+    canonicalizeInstructionTargets(targets, { resolver: () => repositoryAgents }),
+    [repositoryAgents],
   );
   assert.deepEqual(
-    reconcileInstructionPair(
-      ['/repo/project/CLAUDE.md'],
-      '/repo/project',
-      { scope: 'global', resolver: (path) => path },
-    ),
-    ['/repo/project/CLAUDE.md'],
+    canonicalizeInstructionTargets(targets, { resolver: (path) => path }),
+    targets,
   );
 });
 

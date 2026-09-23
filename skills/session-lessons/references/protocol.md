@@ -32,12 +32,12 @@ accepted set and exact target diffs have been approved.
 | Scope | Claude Code | GitHub Copilot CLI |
 | --- | --- | --- |
 | Global | `~/.claude/CLAUDE.md` | `~/.copilot/copilot-instructions.md` |
-| Repository | `<repo>/CLAUDE.md` | `<repo>/.github/copilot-instructions.md` |
+| Repository | `<repo>/CLAUDE.md`, or `<repo>/AGENTS.md` when it exists without `CLAUDE.md` | `<repo>/.github/copilot-instructions.md` |
 
-Resolve symlinks before previewing. In this `claude-skills` repository, the
-distributed top-level `CLAUDE.md` and `COPILOT.md` are a synchronized pair. If a
-global symlink resolves to either file, route and reconcile the accepted patch
-to both files together.
+Resolve symlinks before previewing and de-duplicate targets by canonical path.
+In this `claude-skills` repository, both global symlinks resolve to the single
+distributed top-level `AGENTS.md`, so a shared global rule produces one target
+and one patch.
 
 ## Mandatory preflight and write sequence
 

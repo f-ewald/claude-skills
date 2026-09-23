@@ -38,7 +38,7 @@
       ],
       "reject": [
         "writes before the exact target diffs are approved",
-        "updates only one file when the target resolves into this repository's CLAUDE.md and COPILOT.md pair"
+        "patches this repository's AGENTS.md twice when both global instruction files resolve to it"
       ]
     }
   ]

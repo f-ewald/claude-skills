@@ -1,7 +1,7 @@
 # Python Standards
 
 Language-specific standards and libraries for Python code. These build on the
-always-on rules in `CLAUDE.md` / `COPILOT.md`; where this file is more specific
+always-on rules in `AGENTS.md`; where this file is more specific
 (e.g. formatting), it takes precedence over the general "follow PEP 8" guidance.
 
 ## Formatting

@@ -47,11 +47,13 @@ node --test tests/*.test.mjs
   `.context_window.*` / `.cost.*`; Copilot reads its own fields and fetches quota
   via `gh`). Keep them separate — do not merge or cross-edit them; the Copilot
   script explicitly leaves the Claude one untouched.
-- `CLAUDE.md` is the global coding-rules artifact this repo **distributes**
-  (symlinked to `~/.claude/CLAUDE.md`), not repo-local config. Keep it under
-  200 lines. `COPILOT.md` is its GitHub Copilot counterpart (symlinked to
-  `~/.copilot/copilot-instructions.md`) — the same global rules, kept in sync,
-  and likewise not repo-local config. Neither is *this* file
+- `AGENTS.md` is the global coding-rules artifact this repo **distributes** to
+  both harnesses (symlinked to `~/.claude/CLAUDE.md` and
+  `~/.copilot/copilot-instructions.md`), not repo-local config. Keep it under
+  200 lines and mark any harness-specific rule explicitly (e.g. "GitHub
+  Copilot CLI only"). It replaced the former `CLAUDE.md` / `COPILOT.md` pair;
+  do not reintroduce either file. A top-level `CLAUDE.md` would also stop
+  Claude Code from loading `AGENTS.md` here. It is not *this* file
   (`.github/copilot-instructions.md`), which is the repo-specific guidance.
 
 ## Conventions when adding or changing a skill

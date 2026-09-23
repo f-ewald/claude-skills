@@ -126,8 +126,8 @@ Custom instructions are a separate feature from Agent Skills. VS Code can read
 the Agent Skills standard.
 
 For the **Copilot CLI**, the global rules travel through Copilot's own personal-instructions file:
-symlink this repo's [`COPILOT.md`](../COPILOT.md) to `~/.copilot/copilot-instructions.md` (see the
-main [README](../README.md#github-copilot-global-rules)). Repository-level
+symlink this repo's [`AGENTS.md`](../AGENTS.md) to `~/.copilot/copilot-instructions.md` (see the
+main [README](../README.md#global-rules)). Repository-level
 instruction files may also apply independently of the personal skills location.
 
 ---

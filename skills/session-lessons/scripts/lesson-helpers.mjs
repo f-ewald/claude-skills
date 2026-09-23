@@ -256,11 +256,15 @@ export function inspectDirtyState(targetPath, repositoryRoot, execFile = execFil
 /**
  * Routes an accepted rule to harness-appropriate global or repository instructions.
  *
+ * A Claude repository rule targets `AGENTS.md` when the repository has one and no
+ * `CLAUDE.md`, because creating `CLAUDE.md` would stop Claude Code reading `AGENTS.md`.
+ *
  * @param {object} options - Routing options.
  * @param {'global'|'repository'} options.scope - Rule scope.
  * @param {'claude'|'copilot'|'shared'} options.harness - Harness applicability.
  * @param {string} options.homeDirectory - User home directory.
  * @param {string} options.repositoryRoot - Repository root.
+ * @param {Function} [options.exists=existsSync] - Injectable file-existence check.
  * @returns {string[]} Requested instruction targets.
  */
 export function routeInstructionTargets({
@@ -268,6 +272,7 @@ export function routeInstructionTargets({
   harness,
   homeDirectory,
   repositoryRoot,
+  exists = existsSync,
 }) {
   if (!['global', 'repository'].includes(scope)) {
     throw new Error(`Unsupported scope: ${scope}`);
@@ -284,7 +289,7 @@ export function routeInstructionTargets({
     targets.push(join(homeDirectory, '.copilot', 'copilot-instructions.md'));
   }
   if (scope === 'repository' && ['claude', 'shared'].includes(harness)) {
-    targets.push(join(repositoryRoot, 'CLAUDE.md'));
+    targets.push(claudeRepositoryTarget(repositoryRoot, exists));
   }
   if (scope === 'repository' && ['copilot', 'shared'].includes(harness)) {
     targets.push(join(repositoryRoot, '.github', 'copilot-instructions.md'));
@@ -293,39 +298,37 @@ export function routeInstructionTargets({
 }
 
 /**
- * Adds this repository's distributed CLAUDE.md/COPILOT.md counterpart when either is targeted.
+ * Returns the repository instruction file Claude Code loads for new rules.
+ *
+ * @param {string} repositoryRoot - Repository root.
+ * @param {Function} exists - File-existence check.
+ * @returns {string} `AGENTS.md` when it exists without `CLAUDE.md`, else `CLAUDE.md`.
+ */
+function claudeRepositoryTarget(repositoryRoot, exists) {
+  const claudePath = join(repositoryRoot, 'CLAUDE.md');
+  const agentsPath = join(repositoryRoot, 'AGENTS.md');
+  if (!exists(claudePath) && exists(agentsPath)) {
+    return agentsPath;
+  }
+  return claudePath;
+}
+
+/**
+ * Resolves targets to canonical paths and removes duplicates.
+ *
+ * Global Claude and Copilot symlinks that share one file, such as this repository's
+ * distributed `AGENTS.md`, collapse into a single target so the rule is written once.
  *
  * @param {string[]} targets - Requested paths.
- * @param {string} repositoryRoot - Current repository root.
- * @param {object} [options] - Pairing options.
+ * @param {object} [options] - Canonicalization options.
  * @param {Function} [options.resolver=resolveTargetPath] - Injectable path resolver.
- * @param {'global'|'repository'} [options.scope='repository'] - Requested rule scope.
- * @returns {string[]} Canonical, de-duplicated targets.
+ * @returns {string[]} Canonical, de-duplicated targets in request order.
  */
-export function reconcileInstructionPair(
+export function canonicalizeInstructionTargets(
   targets,
-  repositoryRoot,
-  {
-    resolver = resolveTargetPath,
-    scope = 'repository',
-  } = {},
+  { resolver = resolveTargetPath } = {},
 ) {
-  const canonical = targets.map((target) => resolver(target));
-  const isDistributionRepository = existsSync(
-    join(repositoryRoot, 'skills', 'session-lessons', 'SKILL.md'),
-  );
-  if (scope !== 'global' || !isDistributionRepository) {
-    return [...new Set(canonical)];
-  }
-
-  const claudePath = resolve(repositoryRoot, 'CLAUDE.md');
-  const copilotPath = resolve(repositoryRoot, 'COPILOT.md');
-  const resolvedClaude = resolver(claudePath);
-  const resolvedCopilot = resolver(copilotPath);
-  if (canonical.some((target) => target === resolvedClaude || target === resolvedCopilot)) {
-    canonical.push(resolvedClaude, resolvedCopilot);
-  }
-  return [...new Set(canonical)];
+  return [...new Set(targets.map((target) => resolver(target)))];
 }
 
 /**

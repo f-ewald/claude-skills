@@ -1,18 +1,26 @@
 # Global Rules
 
 <!--
-GitHub Copilot CLI counterpart to CLAUDE.md — the same always-on global coding
-rules, for the Copilot harness. Distribute it by symlinking to the location
-Copilot reads personal (global) instructions from (see README.md):
+Maintainer notes. Claude Code strips block-level HTML comments before loading
+this file.
 
-    ln -s /path/to/claude-skills/COPILOT.md ~/.copilot/copilot-instructions.md
+AGENTS.md is the single source of the always-on global coding rules for both
+Claude Code and GitHub Copilot CLI. It replaces the former CLAUDE.md /
+COPILOT.md pair. Distribute it by symlinking it into each harness's personal
+instructions location (see README.md):
 
-- This is NOT .github/copilot-instructions.md — that file documents *this repo's*
-  architecture and is auto-loaded only inside this repo. COPILOT.md carries the
-  *global* rules and applies everywhere once symlinked into ~/.copilot/.
-- Copilot does not auto-read a file named COPILOT.md, so it has no effect while it
-  just sits in this repo; inside this repo the same rules already apply via CLAUDE.md.
-- Keep this in sync with CLAUDE.md.
+    # Claude Code
+    ln -s /path/to/claude-skills/AGENTS.md ~/.claude/CLAUDE.md
+
+    # GitHub Copilot CLI only
+    ln -s /path/to/claude-skills/AGENTS.md ~/.copilot/copilot-instructions.md
+
+Neither harness reads a personal AGENTS.md, so the symlink names above are
+required. Inside this repository both harnesses also load AGENTS.md as
+project instructions.
+
+GitHub Copilot CLI only: this is NOT .github/copilot-instructions.md, which
+documents this repository's architecture and is auto-loaded only inside it.
 -->
 
 ## Code Style
@@ -21,9 +29,9 @@ Copilot reads personal (global) instructions from (see README.md):
 - Use best practices for specific languages. Per-language standards and required libraries live in `programming-standards/<language>.md` (e.g. `programming-standards/python.md`) and take precedence over general guidance (like PEP 8) where they conflict.
 - Avoid using global variables; instead, pass necessary data through method parameters or use class-level variables when appropriate.
 - Avoid big refactors unless specifically asked to do so. Focus on making minimal necessary changes to achieve the migration goals while maintaining code stability.
-- When refactoring or making major changes, update the relevant always-on instructions file (`CLAUDE.md` and `COPILOT.md`) to reflect the new structure and rules.
+- When refactoring or making major changes, update the always-on instructions file (`AGENTS.md`) to reflect the new structure and rules.
 - When solving an issue and you encounter debug statements, explicitly ask the user if it is ok to remove them.
-- These global-rules files should contain less than 200 lines in the ideal case.
+- This global-rules file should contain less than 200 lines in the ideal case.
 
 ## Comments & documentation
 - Document every method using the language's documentation style; per-language

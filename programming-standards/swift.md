@@ -1,7 +1,7 @@
 # Swift Standards
 
 Language-specific standards and libraries for Swift code, focused on **SwiftUI**. These
-build on the always-on rules in `CLAUDE.md` / `COPILOT.md`; where this file is more
+build on the always-on rules in `AGENTS.md`; where this file is more
 specific (e.g. formatting), it takes precedence over general Swift conventions where they
 conflict.
 

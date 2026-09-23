@@ -99,7 +99,7 @@ Work the approved todos **one at a time**. For each:
 6. mark it done only after that validation succeeds.
 
 Follow the repo's existing conventions and any `programming-standards/`,
-`CLAUDE.md`, or `COPILOT.md` rules that apply. Do not add validation tooling
+`AGENTS.md`, `CLAUDE.md`, or Copilot instruction-file rules that apply. Do not add validation tooling
 unless the approved item itself requires it.
 
 If validation fails, preserve all unrelated user changes, show the exact
