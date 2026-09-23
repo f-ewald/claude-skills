@@ -3,6 +3,13 @@
 This file is generated from the repository's first-parent commit history by
 [`scripts/update-changelog.mjs`](scripts/update-changelog.mjs). Do not edit it manually.
 
+## 2026-09-23
+
+- Merge remote-tracking branch 'origin/main' ([`b59b95f`](../../commit/b59b95fef491fda8b6d005ca60f84313b8751962))
+- Document stream-closing pitfalls for ijson streaming ([`0f80019`](../../commit/0f8001977ee8ba543f5209d568e96e41d6436830))
+- Add ijson streaming JSON guidance to Python standards ([`c7d8624`](../../commit/c7d862445bcbd6c74c21a1b411ed14753536e599))
+- Add async and web stack guidance to Python standards ([`a8485af`](../../commit/a8485aff88b7bce7b51cae6495d7447666e4c5e4))
+
 ## 2026-09-02
 
 - Fix Swift known issue: Simulator debug logs ARE recoverable ([`25b2d32`](../../commit/25b2d321d0616037c9e29a04ee372320cabe4b1b))
