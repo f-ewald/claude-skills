@@ -3,6 +3,10 @@
 This file is generated from the repository's first-parent commit history by
 [`scripts/update-changelog.mjs`](scripts/update-changelog.mjs). Do not edit it manually.
 
+## 2026-10-08
+
+- Update PR review skill to LLM Council ([`002dea2`](../../commit/002dea243c627598dd886fb9bf91b63bf19f9299))
+
 ## 2026-09-23
 
 - Consolidate CLAUDE.md and COPILOT.md into AGENTS.md ([`6e65164`](../../commit/6e65164075e6f8683470b56bdba92f6d03cb45ab))
