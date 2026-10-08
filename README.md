@@ -201,7 +201,7 @@ see [docs/using-skills-in-copilot.md](docs/using-skills-in-copilot.md) for step-
 | `design-doc` | Reviewed Markdown RFC; optional Google Doc | grill-me and deeper-research contracts | Research sources; optional approved Google Docs | Confirms before replacing a file |
 | `grill-me` | In-chat decision ledger and final reconciliation | None | None | Read-only and chat-only unless an artifact is explicitly requested |
 | `interview-assessment` | Professional interview summary and calibrated 1-5 rating | Interview notes or transcript | None | Read-only unless explicitly asked to append or update the supplied file |
-| `pr-review` | One confirmed GitHub pull-request review | Authenticated gh | GitHub or GHES API | Posts only confirmed comments; submission is explicit |
+| `pr-review` | One confirmed GitHub pull-request review | Authenticated gh; GitHub Copilot CLI and Node 18+ for the LLM council | GitHub or GHES API; Copilot models for the council | Posts only confirmed comments; submission is explicit; temporary private snapshot deleted after the council |
 | `session-lessons` | Confirmed durable instruction rules | Node 18+ and local harness transcripts | None | Previews and confirms each local instruction-file edit |
 | `ultracode` | Structured multi-agent workflow result | Node 18+ and a supported agent CLI | None in local-read; opt-in in research-read | Read-only by default; write/exec requires an explicit profile |
 | `worklog` | Local worklog entries and summaries | Node 18+ and wl 0.4.x | Only an explicitly confirmed wl github operation | Uses a JSON-to-argv adapter; confirms initialization, imports, bulk writes, and overwrites |
@@ -264,6 +264,16 @@ list projection cannot strand a pending review. A conservative
 manifest/lockfile-only fast path checks CI for the pinned head and
 can recommend an explicitly confirmed approval for version-only changes. It
 posts only confirmed content and never silently submits a partial review.
+
+In GitHub Copilot CLI the review runs as an
+[LLM council](https://github.com/karpathy/llm-council). The bundled
+zero-dependency `scripts/council.mjs` discovers the latest flagship Anthropic,
+OpenAI, and Gemini models automatically and shows the roster for confirmation.
+Each model then reviews a read-only snapshot of the pinned repository
+independently, and the models vote on each other's anonymized findings. Only
+findings a strict majority supports are flagged; the session model acts as
+Chairman. Other harnesses, or a council without quorum, fall back to the
+single-model review.
 [Contract](skills/pr-review/SKILL.md)
 
 ### `session-lessons`

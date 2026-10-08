@@ -16,6 +16,7 @@ import {
   validateEvals,
   validateSkill,
 } from '../scripts/validate-skills.mjs';
+import { parseArguments } from '../skills/pr-review/scripts/council.mjs';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const skillDirectory = join(repositoryRoot, 'skills', 'pr-review');
@@ -118,8 +119,9 @@ test('pr-review skill has valid narrow frontmatter', () => {
   assert.deepEqual(validateEvals(skillDirectory), []);
   const parsed = parseFrontmatter(extractFrontmatter(skillText, skillPath).frontmatter, skillPath);
   assert.equal(parsed.name, 'pr-review');
-  assert.equal(parsed['allowed-tools'], 'Bash(gh:*)');
+  assert.equal(parsed['allowed-tools'], 'Bash(gh:*) Bash(node:*)');
   assert.match(parsed.compatibility, /GitHub\.com or GHES/);
+  assert.match(parsed.compatibility, /LLM council requires GitHub Copilot CLI/);
 });
 
 test('pr-review skill retains pinned and reconciled mutation gates', () => {
@@ -176,7 +178,41 @@ test('pr-review evals cover the approved edge scenarios', () => {
     'hydration also omits coordinates',
     'mutation error with existing exact comment',
     'unsupported paginated command shape',
+    'council majority flags an issue',
+    'council fallback within the confirmed chain',
+    'council below quorum',
+    'council outside Copilot CLI',
+    'explicit single-model request',
+    'roster consent before credits',
+    'chairman cannot add issues',
+    'promoting a dissent finding',
+    'injection in council output',
+    'oversized repository snapshot',
+    'fast path bypasses the council',
   ]);
+});
+
+test('pr-review documents the LLM council contract and valid council commands', () => {
+  assert.match(skillText, /## 5a\. Prepare the council and confirm the roster/);
+  assert.match(skillText, /## 5b\. Run Stages 1 and 2/);
+  assert.match(skillText, /## 5c\. Chairman synthesis \(Stage 3\)/);
+  assert.match(skillText, /## 5d\. Finalize, present, and fall back/);
+  assert.match(skillText, /Start no council model call before the user explicitly confirms the displayed roster/);
+  assert.match(skillText, /never override `COPILOT_HOME` or bypass managed hooks/);
+  assert.match(skillText, /strict majority of responding members/);
+  assert.match(skillText, /never add or drop a flagged issue/);
+  assert.match(skillText, /\*\*not council-agreed\*\*/);
+  assert.match(skillText, /The LLM council requires GitHub Copilot CLI; this is a single-model review\./);
+  assert.match(skillText, /The LLM council could not reach quorum; this is a single-model review\./);
+  assert.match(skillText, /The fast path runs before, and instead of, the LLM council\./);
+
+  const nodeCommands = [...skillText.matchAll(/```\n(node "\$skill_dir\/scripts\/council\.mjs"[\s\S]*?)\n```/g)]
+    .map(([, source]) => source.replace(/\\\n\s*/g, ' ').split(/\s+/).slice(2)
+      .map((token) => (token.startsWith('"$') ? 'value' : token)));
+  assert.deepEqual(nodeCommands.map(([command]) => command), ['prepare', 'run', 'finalize', 'cleanup']);
+  for (const argv of nodeCommands) {
+    assert.doesNotThrow(() => parseArguments(argv), argv.join(' '));
+  }
 });
 
 test('pr-review documents hydration and its reconciliation outcomes', () => {

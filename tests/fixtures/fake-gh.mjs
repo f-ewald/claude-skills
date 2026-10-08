@@ -13,15 +13,23 @@
  * Fixtures model the reported projection mismatch: the review-comments list
  * omits `side`/`line`/`subject_type` while the individual comment endpoint
  * returns them.
+ *
+ * Council tests may shallow-override fixtures with FAKE_GH_FIXTURES (a JSON
+ * file path), serve `tarballFile` bytes for the tarball route, return
+ * per-OID `blobs`, and answer blob lookups per `expression` via `blobLookups`.
  */
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const fixtures = JSON.parse(
+const defaults = JSON.parse(
   readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'pr-review-api.json'), 'utf8'),
 );
+const overrides = process.env.FAKE_GH_FIXTURES
+  ? JSON.parse(readFileSync(process.env.FAKE_GH_FIXTURES, 'utf8'))
+  : {};
+const fixtures = { ...defaults, ...overrides, graphql: { ...defaults.graphql, ...overrides.graphql } };
 
 const VALUE_FLAGS = new Set([
   '--hostname',
@@ -205,7 +213,12 @@ const REST_ROUTES = [
   {
     pattern: /^repos\/[\w.-]+\/[\w.-]+\/git\/blobs\/[0-9a-f]+$/,
     method: 'GET',
-    body: () => fixtures.blob,
+    body: (route) => fixtures.blobs?.[route.match(/([0-9a-f]+)$/)[1]] ?? fixtures.blob,
+  },
+  {
+    pattern: /^repos\/[\w.-]+\/[\w.-]+\/tarball\/[0-9a-f]+$/,
+    method: 'GET',
+    body: () => (fixtures.tarballFile ? readFileSync(fixtures.tarballFile) : undefined),
   },
   {
     pattern: /^repos\/[\w.-]+\/[\w.-]+\/pulls\/\d+\/reviews$/,
@@ -296,6 +309,10 @@ function serveGraphql(flags) {
   const operation = ['addPullRequestReviewThread', 'statusCheckRollup', 'reviewThreads'].find((name) =>
     query.includes(name),
   );
+  const expression = (flags.get('-f') || []).find((field) => field.startsWith('expression='))?.slice(11);
+  if (!operation && fixtures.blobLookups && Object.hasOwn(fixtures.blobLookups, expression ?? '')) {
+    return fixtures.blobLookups[expression];
+  }
   const fixture = fixtures.graphql[operation ?? (query.includes('Blob') ? 'blob' : '')];
   if (!fixture) {
     usageError('no GraphQL fixture matches this query');
@@ -335,6 +352,14 @@ function runApi(argv) {
   }
   if (body === undefined) {
     usageError(`no fixture for ${method} ${route}`);
+  }
+  if (Buffer.isBuffer(body)) {
+    process.stdout.write(body);
+    return;
+  }
+  if (filter === undefined && typeof body === 'string') {
+    process.stdout.write(body);
+    return;
   }
   const lines =
     filter === undefined
