@@ -3,6 +3,10 @@
 This file is generated from the repository's first-parent commit history by
 [`scripts/update-changelog.mjs`](scripts/update-changelog.mjs). Do not edit it manually.
 
+## 2026-10-09
+
+- Add no-star-imports rule to Python standards ([`73e782b`](../../commit/73e782bfcfa30ddacaf1a32a82702cc4879606b9))
+
 ## 2026-10-08
 
 - Update PR review skill to LLM Council ([`002dea2`](../../commit/002dea243c627598dd886fb9bf91b63bf19f9299))
