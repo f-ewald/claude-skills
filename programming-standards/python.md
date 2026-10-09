@@ -20,6 +20,12 @@ always-on rules in `AGENTS.md`; where this file is more specific
 - Avoid deferred/inline imports; use one only to break a genuine circular import
   or to guard a truly optional or heavy dependency, and add a short comment saying
   why.
+- **Never use star imports** (`from module import *`). Import names explicitly
+  (`from module import name`) or import the module and qualify names at the call
+  site. Star imports hide where names come from, can silently shadow existing
+  ones, and blind linters to undefined names (Ruff/pyflakes `F403`, `F405`).
+- That includes a package's `__init__.py`: to re-export its public API, import
+  each name explicitly and list it in `__all__`.
 
 ## Documentation
 
