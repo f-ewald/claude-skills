@@ -3,6 +3,10 @@
 This file is generated from the repository's first-parent commit history by
 [`scripts/update-changelog.mjs`](scripts/update-changelog.mjs). Do not edit it manually.
 
+## 2026-10-14
+
+- Add Alembic table-creation rule to Python standards ([`8c542cb`](../../commit/8c542cb3174bfb4f35a183e9f79450c3d8c04721))
+
 ## 2026-10-09
 
 - Add no-star-imports rule to Python standards ([`73e782b`](../../commit/73e782bfcfa30ddacaf1a32a82702cc4879606b9))
