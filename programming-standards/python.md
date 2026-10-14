@@ -149,6 +149,41 @@ recommend Quart for mainly-async codebases.
   buffering. Verify HTTP/2 end to end if you chose a server for it — a proxy that
   doesn't pass it through silently downgrades you.
 
+## Database migrations
+
+**Don't repeat a model's table creation as an Alembic migration.** The
+SQLAlchemy model is the single source of truth for its table; an
+`op.create_table(...)` that restates its columns duplicates it and risks
+drift — once they diverge, a database built by the migrations no longer
+matches one built from the models.
+
+- Create tables from the models with `Base.metadata.create_all()` (with an
+  `AsyncEngine`: `await conn.run_sync(Base.metadata.create_all)`). It creates
+  only the tables that don't exist yet and never alters an existing one — not
+  even to add an index.
+- Write migrations only for what `create_all()` can't do: change an existing
+  table (add, drop, rename, or retype a column; add an index or constraint;
+  rename or drop the table) or backfill data.
+- Run `create_all()` in one schema step — a CLI command or deploy job — not in
+  the app's startup hook, where every worker races to create the same tables.
+- On a fresh database (no `alembic_version` table), follow `create_all()` with
+  `alembic stamp head` instead of replaying the migration history. On an
+  existing one, follow it with `alembic upgrade head`, so migrations can use
+  the release's new tables — a foreign key to one, a backfill into one.
+- Run `alembic upgrade head` first instead when a migration must land before
+  `create_all()`, e.g. one renaming a table to a model's name: `create_all()`
+  would create that name empty and the rename would fail.
+- In a project that only runs `alembic upgrade head`, add the schema step
+  before relying on this rule, or a new model ships without its table. Leave
+  existing `create_table` migrations in place.
+- `alembic revision --autogenerate` emits `op.create_table(...)` for every
+  model table missing from the database it compares against. Run
+  `create_all()` there first, or delete the generated `create_table` and its
+  `drop_table` in `downgrade()`.
+- The trade-off: a database that skips a release gets each missing table in
+  its current shape, so a pending migration that creates or alters such a
+  table fails. Upgrade every database release by release, or rebuild it.
+
 ## Streaming JSON
 
 **Use ijson to consume large JSON responses incrementally.** `response.json()`
