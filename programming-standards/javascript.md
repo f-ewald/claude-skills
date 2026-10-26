@@ -61,6 +61,8 @@ Build UI as **Lit** web components (`lit` from [lit.dev](https://lit.dev)).
 - Keep components small and composable; lift shared logic into plain modules
   rather than deep base-class hierarchies.
 - One component per file; the file name matches the custom-element tag it defines.
+- Render native HTML elements in templates (`<button>`, `<dialog>`, `<details>`, …) rather than
+  re-implementing them; see `html.md`.
 
 ```javascript
 import { LitElement, html, css } from 'lit';
