@@ -3,6 +3,10 @@
 This file is generated from the repository's first-parent commit history by
 [`scripts/update-changelog.mjs`](scripts/update-changelog.mjs). Do not edit it manually.
 
+## 2026-10-27
+
+- Add list-stutter body-scope gotcha to Swift standards ([`44bd668`](../../commit/44bd668e989bb88ba774b0a8eb838af241587a5f))
+
 ## 2026-10-14
 
 - Add Alembic table-creation rule to Python standards ([`8c542cb`](../../commit/8c542cb3174bfb4f35a183e9f79450c3d8c04721))
