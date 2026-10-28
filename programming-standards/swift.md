@@ -153,6 +153,14 @@ struct RootView: View {
   `.equatable()` only when comparing a view is cheaper than recomputing its `body`, and
   make sure `==` covers every render-affecting input.
 - Avoid needless `@State` and over-broad observation that force extra view updates.
+- **Isolate frequently-changing `@Observable`/`@Environment` reads into their own subview.**
+  Dependency tracking is per `View` instance, not per computed property — a fast-changing
+  read (a live timer, a GPS-driven distance) composed via a computed property or
+  `@ViewBuilder` directly in a parent's `body` drags the *whole parent* into re-rendering on
+  every change, including unrelated expensive work (list grouping, per-row lookups) that
+  happens to live alongside it in the same `body`. Extract the fast-changing piece into its
+  own `View` type reading its own `@Environment`/`@Observable` state so SwiftUI tracks and
+  re-renders it independently.
 
 ## Accessibility & localization
 
@@ -303,3 +311,33 @@ subsystem policy with `simctl spawn booted log config --subsystem <id> --mode
 level:debug`, and (2) stream with `simctl spawn booted log stream --level
 debug --predicate '...'` instead of a bare host-side `log stream`. Both steps
 matter — either alone isn't enough.
+
+### A list/screen stutters during an unrelated frequent update elsewhere on it
+
+A SwiftUI screen combining a `List` (grouping/sorting rows, resolving a
+per-row lookup against another store) with a record button whose label read
+`tripService.recorder.distance` — updated on every GPS fix during an active
+recording — visibly stuttered while recording. Both pieces were composed as
+plain computed properties directly in the same parent view's `body`.
+
+**Cause:** `@Observable`/`@Environment` access tracking is per `View`
+instance, not per computed property. Since the record button's frequently
+changing `recorder.distance` read happened during the parent's `body`
+evaluation, SwiftUI attributed it to the parent's dependency graph — so every
+GPS update re-ran the *entire* parent `body`, including the list's
+day-grouping/sorting and its per-row lookups, even though none of that data
+had changed.
+
+**Fix (confirmed working):** extract the fast-changing subtree (the record
+button) and the expensive-but-rarely-changing subtree (the list) into two
+separate `View` structs, each reading only the `@Environment`/`@Observable`
+state it needs. SwiftUI then tracks and re-renders each independently, so the
+frequent update only re-renders the small button.
+
+**How to apply:** if a user reports a list or screen "stuttering"/"lagging"
+alongside some other frequently-updating element (a timer, a live sensor
+value, a progress indicator), suspect shared `body` scope before optimizing
+the list's own computations. Check whether the frequently-changing element
+and the expensive one are both composed directly in the same parent `body`
+(via computed properties or `@ViewBuilder`) and split them into separate
+`View` types if so — see the performance bullet above.
