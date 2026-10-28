@@ -5,6 +5,7 @@ This file is generated from the repository's first-parent commit history by
 
 ## 2026-10-27
 
+- Add HTML programming standards ([`f9e4097`](../../commit/f9e40970b8c6ac6303c170e69ae906c484b62ba1))
 - Add list-stutter body-scope gotcha to Swift standards ([`44bd668`](../../commit/44bd668e989bb88ba774b0a8eb838af241587a5f))
 
 ## 2026-10-14
